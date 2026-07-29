@@ -2,10 +2,10 @@ import pandas as pd
 import numpy as np
  
 utilities = pd.read_csv('utilities.csv')
-substations = pd.read_csv('substations.csv')
+substations = pd.reads_csv('substations.csv')
 lines = pd.read_csv('lines.csv')
 
-print(utilities)
+"""print(utilities)
 print(substations)
 print(lines)
 
@@ -40,3 +40,13 @@ print(substations['Status'].value_counts())
 print(lines['Utility ID'].value_counts())
 connections = pd.concat([lines['Source Substation'], lines['Destination Substation']])
 print(connections.value_counts().head(10))
+"""
+import matplotlib.pyplot as plt
+
+substations['Region'].value_counts().plot(kind='bar', title='Substations by Region')
+plt.savefig('eda_regions.png')
+plt.show()
+
+connections.value_counts().head(10).plot(kind='bar', title='Top 10 Most-Connected Substations')
+plt.savefig('eda_top_substations.png')
+plt.show()
