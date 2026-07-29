@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
- 
+import matplotlib as plt
+
+
 utilities = pd.read_csv('utilities.csv')
-substations = pd.reads_csv('substations.csv')
+substations = pd.read_csv('substations.csv')
 lines = pd.read_csv('lines.csv')
 
-"""print(utilities)
+print(utilities)
 print(substations)
 print(lines)
 
@@ -19,7 +21,6 @@ print(lines.head())
 print("Duplicate rows in utilities:", utilities.duplicated().sum())
 print("Duplicate rows in substations:", substations.duplicated().sum())
 print("Duplicate rows in lines:", lines.duplicated().sum())
-
 
 valid_substation_ids = set(substations['Substation ID'])
 valid_utility_ids = set(utilities['Utility ID'])
@@ -40,8 +41,6 @@ print(substations['Status'].value_counts())
 print(lines['Utility ID'].value_counts())
 connections = pd.concat([lines['Source Substation'], lines['Destination Substation']])
 print(connections.value_counts().head(10))
-"""
-import matplotlib.pyplot as plt
 
 substations['Region'].value_counts().plot(kind='bar', title='Substations by Region')
 plt.savefig('eda_regions.png')
