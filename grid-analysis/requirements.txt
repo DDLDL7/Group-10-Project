@@ -9,3 +9,6 @@ geopandas
 geopy
 scipy
 streamlit
+jupyter
+ipykernel
+pytest

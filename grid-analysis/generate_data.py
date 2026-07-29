@@ -11,8 +11,11 @@ reflecting the real West African Power Pool (WAPP).
 import csv
 import math
 import random
- 
+from pathlib import Path
+
 random.seed(42)
+
+DATA_DIR = Path(__file__).resolve().parent / "data"
  
 # ---------------------------------------------------------------------------
 # Utilities (analogous to airlines.csv)
@@ -176,18 +179,20 @@ for src_name, dst_name, utility_id in border_links:
 # ---------------------------------------------------------------------------
 # Write CSVs
 # ---------------------------------------------------------------------------
-with open("utilities.csv", "w", newline="") as f:
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+with open(DATA_DIR / "utilities.csv", "w", newline="") as f:
     w = csv.writer(f)
     w.writerow(["Utility ID", "Name", "Alias", "Code", "Type", "Country", "Active"])
     w.writerows(utilities)
- 
-with open("substations.csv", "w", newline="") as f:
+
+with open(DATA_DIR / "substations.csv", "w", newline="") as f:
     w = csv.writer(f)
     w.writerow(["Substation ID", "Name", "Short Name", "Region", "Country", "Latitude", "Longitude",
                 "Voltage (kV)", "Capacity (MVA)", "Commissioning Year", "Type", "Status"])
     w.writerows(substations)
- 
-with open("lines.csv", "w", newline="") as f:
+
+with open(DATA_DIR / "lines.csv", "w", newline="") as f:
     w = csv.writer(f)
     w.writerow(["Line ID", "Utility ID", "Source Substation ID", "Source Substation",
                 "Destination Substation ID", "Destination Substation", "Voltage (kV)",
