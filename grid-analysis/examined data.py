@@ -31,3 +31,12 @@ bad_utility = lines[~lines['Utility ID'].isin(valid_utility_ids)]
 print("Lines with invalid source substation:", len(bad_source))
 print("Lines with invalid destination substation:", len(bad_dest))
 print("Lines with invalid utility:", len(bad_utility))
+
+print(substations[['Latitude', 'Longitude', 'Voltage (kV)', 'Capacity (MVA)']].describe())
+print(substations['Region'].value_counts())
+print(substations['Voltage (kV)'].value_counts())
+print(substations['Status'].value_counts())
+
+print(lines['Utility ID'].value_counts())
+connections = pd.concat([lines['Source Substation'], lines['Destination Substation']])
+print(connections.value_counts().head(10))
