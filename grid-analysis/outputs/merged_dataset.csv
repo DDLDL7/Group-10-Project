@@ -1,0 +1,56 @@
+Line ID,Utility ID,Source Substation ID,Source Substation,Destination Substation ID,Destination Substation,Voltage (kV),Length (km),Capacity (MVA),Status,Line Type,Source Name,Source Region,Source Country,Destination Name,Destination Region,Destination Country,Utility Name,Utility Alias,Utility Code
+1,2,1,Achimota Substation,2,Tema Substation,11,25.2,215.0,Active,Underground,Achimota Substation,Greater Accra,Ghana,Tema Substation,Greater Accra,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+2,2,1,Achimota Substation,3,Mallam Substation,11,11.0,36.4,Active,Overhead,Achimota Substation,Greater Accra,Ghana,Mallam Substation,Greater Accra,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+3,3,1,Achimota Substation,5,Kaneshie Substation,11,5.9,277.4,Active,Overhead,Achimota Substation,Greater Accra,Ghana,Kaneshie Substation,Greater Accra,Ghana,Ghana Grid Company,GRIDCo,GRD
+4,1,2,Tema Substation,3,Mallam Substation,330,34.4,39.0,Active,Underground,Tema Substation,Greater Accra,Ghana,Mallam Substation,Greater Accra,Ghana,Electricity Company of Ghana,ECG,ECG
+5,3,2,Tema Substation,4,Legon Substation,161,19.5,186.5,Active,Underground,Tema Substation,Greater Accra,Ghana,Legon Substation,Greater Accra,Ghana,Ghana Grid Company,GRIDCo,GRD
+6,2,3,Mallam Substation,4,Legon Substation,161,17.1,220.5,Active,Underground,Mallam Substation,Greater Accra,Ghana,Legon Substation,Greater Accra,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+7,3,3,Mallam Substation,5,Kaneshie Substation,161,7.0,108.5,Active,Overhead,Mallam Substation,Greater Accra,Ghana,Kaneshie Substation,Greater Accra,Ghana,Ghana Grid Company,GRIDCo,GRD
+8,3,3,Mallam Substation,6,Aboadze Junction Substation,161,22.4,298.9,Under Maintenance,Overhead,Mallam Substation,Greater Accra,Ghana,Aboadze Junction Substation,Greater Accra,Ghana,Ghana Grid Company,GRIDCo,GRD
+9,1,4,Legon Substation,5,Kaneshie Substation,161,13.4,266.6,Active,Underground,Legon Substation,Greater Accra,Ghana,Kaneshie Substation,Greater Accra,Ghana,Electricity Company of Ghana,ECG,ECG
+10,2,4,Legon Substation,6,Aboadze Junction Substation,161,8.4,217.0,Active,Overhead,Legon Substation,Greater Accra,Ghana,Aboadze Junction Substation,Greater Accra,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+11,1,7,Kumasi Central Substation,10,Mampong Substation,69,53.3,269.1,Active,Overhead,Kumasi Central Substation,Ashanti,Ghana,Mampong Substation,Ashanti,Ghana,Electricity Company of Ghana,ECG,ECG
+12,3,7,Kumasi Central Substation,11,Konongo Substation,69,50.4,116.0,Active,Underground,Kumasi Central Substation,Ashanti,Ghana,Konongo Substation,Ashanti,Ghana,Ghana Grid Company,GRIDCo,GRD
+13,2,8,Ejisu Substation,9,Obuasi Substation,33,76.1,256.9,Active,Underground,Ejisu Substation,Ashanti,Ghana,Obuasi Substation,Ashanti,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+14,2,8,Ejisu Substation,11,Konongo Substation,69,37.8,198.4,Active,Underground,Ejisu Substation,Ashanti,Ghana,Konongo Substation,Ashanti,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+15,1,9,Obuasi Substation,11,Konongo Substation,33,71.0,284.6,Active,Overhead,Obuasi Substation,Ashanti,Ghana,Konongo Substation,Ashanti,Ghana,Electricity Company of Ghana,ECG,ECG
+16,2,10,Mampong Substation,11,Konongo Substation,69,64.2,61.5,Active,Underground,Mampong Substation,Ashanti,Ghana,Konongo Substation,Ashanti,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+17,1,12,Takoradi Substation,13,Aboadze Substation,33,12.3,78.8,Active,Overhead,Takoradi Substation,Western,Ghana,Aboadze Substation,Western,Ghana,Electricity Company of Ghana,ECG,ECG
+18,3,12,Takoradi Substation,14,Tarkwa Substation,33,66.2,133.8,Active,Overhead,Takoradi Substation,Western,Ghana,Tarkwa Substation,Western,Ghana,Ghana Grid Company,GRIDCo,GRD
+19,1,13,Aboadze Substation,14,Tarkwa Substation,33,55.8,247.0,Active,Overhead,Aboadze Substation,Western,Ghana,Tarkwa Substation,Western,Ghana,Electricity Company of Ghana,ECG,ECG
+20,2,13,Aboadze Substation,15,Axim Substation,33,66.4,135.3,Active,Overhead,Aboadze Substation,Western,Ghana,Axim Substation,Western,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+21,3,14,Tarkwa Substation,15,Axim Substation,69,59.7,264.2,Active,Overhead,Tarkwa Substation,Western,Ghana,Axim Substation,Western,Ghana,Ghana Grid Company,GRIDCo,GRD
+22,2,16,Cape Coast Substation,17,Winneba Substation,69,84.4,249.8,Active,Overhead,Cape Coast Substation,Central,Ghana,Winneba Substation,Central,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+23,1,16,Cape Coast Substation,18,Kasoa Substation,11,118.3,98.0,Under Maintenance,Underground,Cape Coast Substation,Central,Ghana,Kasoa Substation,Central,Ghana,Electricity Company of Ghana,ECG,ECG
+24,3,16,Cape Coast Substation,19,Assin Fosu Substation,11,82.4,294.7,Active,Overhead,Cape Coast Substation,Central,Ghana,Assin Fosu Substation,Central,Ghana,Ghana Grid Company,GRIDCo,GRD
+25,2,17,Winneba Substation,18,Kasoa Substation,11,32.3,289.5,Active,Overhead,Winneba Substation,Central,Ghana,Kasoa Substation,Central,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+26,2,18,Kasoa Substation,19,Assin Fosu Substation,11,140.9,295.6,Active,Overhead,Kasoa Substation,Central,Ghana,Assin Fosu Substation,Central,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+27,3,20,Koforidua Substation,21,Akosombo Substation,11,48.0,165.6,Active,Overhead,Koforidua Substation,Eastern,Ghana,Akosombo Substation,Eastern,Ghana,Ghana Grid Company,GRIDCo,GRD
+28,1,20,Koforidua Substation,22,Nkawkaw Substation,11,98.0,277.8,Active,Overhead,Koforidua Substation,Eastern,Ghana,Nkawkaw Substation,Eastern,Ghana,Electricity Company of Ghana,ECG,ECG
+29,2,21,Akosombo Substation,22,Nkawkaw Substation,69,117.8,111.3,Active,Overhead,Akosombo Substation,Eastern,Ghana,Nkawkaw Substation,Eastern,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+30,3,21,Akosombo Substation,23,Suhum Substation,69,82.7,209.6,Active,Underground,Akosombo Substation,Eastern,Ghana,Suhum Substation,Eastern,Ghana,Ghana Grid Company,GRIDCo,GRD
+31,1,22,Nkawkaw Substation,23,Suhum Substation,69,75.9,78.9,Active,Underground,Nkawkaw Substation,Eastern,Ghana,Suhum Substation,Eastern,Ghana,Electricity Company of Ghana,ECG,ECG
+32,2,24,Ho Substation,25,Kpong Substation,11,79.5,163.1,Active,Overhead,Ho Substation,Volta,Ghana,Kpong Substation,Volta,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+33,3,24,Ho Substation,27,Sogakope Substation,11,84.4,113.9,Active,Overhead,Ho Substation,Volta,Ghana,Sogakope Substation,Volta,Ghana,Ghana Grid Company,GRIDCo,GRD
+34,1,25,Kpong Substation,27,Sogakope Substation,11,59.7,32.9,Active,Overhead,Kpong Substation,Volta,Ghana,Sogakope Substation,Volta,Ghana,Electricity Company of Ghana,ECG,ECG
+35,3,26,Hohoe Substation,27,Sogakope Substation,11,152.5,221.1,Active,Underground,Hohoe Substation,Volta,Ghana,Sogakope Substation,Volta,Ghana,Ghana Grid Company,GRIDCo,GRD
+36,3,28,Sunyani Substation,29,Techiman Substation,33,63.1,269.9,Active,Overhead,Sunyani Substation,Bono,Ghana,Techiman Substation,Bono,Ghana,Ghana Grid Company,GRIDCo,GRD
+37,3,29,Techiman Substation,30,Berekum Substation,33,87.3,34.1,Active,Overhead,Techiman Substation,Bono,Ghana,Berekum Substation,Bono,Ghana,Ghana Grid Company,GRIDCo,GRD
+38,2,31,Tamale Substation,32,Yendi Substation,11,112.6,296.6,Active,Underground,Tamale Substation,Northern,Ghana,Yendi Substation,Northern,Ghana,Northern Electricity Distribution Company,NEDCo,NED
+39,3,34,Bolgatanga Substation,35,Bawku Substation,161,86.6,64.6,Active,Underground,Bolgatanga Substation,Upper East,Ghana,Bawku Substation,Upper East,Ghana,Ghana Grid Company,GRIDCo,GRD
+40,3,1,Achimota Substation,7,Kumasi Central Substation,330,225.4,303.7,Active,Overhead,Achimota Substation,Greater Accra,Ghana,Kumasi Central Substation,Ashanti,Ghana,Ghana Grid Company,GRIDCo,GRD
+41,3,7,Kumasi Central Substation,12,Takoradi Substation,330,228.3,298.9,Active,Overhead,Kumasi Central Substation,Ashanti,Ghana,Takoradi Substation,Western,Ghana,Ghana Grid Company,GRIDCo,GRD
+42,3,12,Takoradi Substation,16,Cape Coast Substation,330,70.5,455.1,Active,Overhead,Takoradi Substation,Western,Ghana,Cape Coast Substation,Central,Ghana,Ghana Grid Company,GRIDCo,GRD
+43,3,16,Cape Coast Substation,20,Koforidua Substation,330,178.8,506.3,Active,Overhead,Cape Coast Substation,Central,Ghana,Koforidua Substation,Eastern,Ghana,Ghana Grid Company,GRIDCo,GRD
+44,3,20,Koforidua Substation,24,Ho Substation,330,113.7,408.5,Active,Overhead,Koforidua Substation,Eastern,Ghana,Ho Substation,Volta,Ghana,Ghana Grid Company,GRIDCo,GRD
+45,3,24,Ho Substation,28,Sunyani Substation,330,367.7,450.7,Active,Overhead,Ho Substation,Volta,Ghana,Sunyani Substation,Bono,Ghana,Ghana Grid Company,GRIDCo,GRD
+46,3,28,Sunyani Substation,31,Tamale Substation,330,324.3,309.8,Active,Overhead,Sunyani Substation,Bono,Ghana,Tamale Substation,Northern,Ghana,Ghana Grid Company,GRIDCo,GRD
+47,3,31,Tamale Substation,34,Bolgatanga Substation,330,175.4,231.0,Active,Overhead,Tamale Substation,Northern,Ghana,Bolgatanga Substation,Upper East,Ghana,Ghana Grid Company,GRIDCo,GRD
+48,3,34,Bolgatanga Substation,36,Wa Substation,330,227.0,314.3,Active,Overhead,Bolgatanga Substation,Upper East,Ghana,Wa Substation,Upper West,Ghana,Ghana Grid Company,GRIDCo,GRD
+49,9,34,Bolgatanga Substation,37,Bolgatanga Interconnection,330,53.0,217.9,Active,Overhead,Bolgatanga Substation,Upper East,Ghana,Bolgatanga Interconnection,Burkina Faso border,Burkina,Sonabel,SONABEL,SNB
+50,9,37,Bolgatanga Interconnection,43,Bobo-Dioulasso Hub,330,426.0,229.9,Active,Overhead,Bolgatanga Interconnection,Burkina Faso border,Burkina,Bobo-Dioulasso Hub,Burkina Faso,Burkina,Sonabel,SONABEL,SNB
+51,5,38,Elubo Border Station,7,Kumasi Central Substation,330,235.2,285.0,Active,Overhead,Elubo Border Station,Cote d'Ivoire border,Cote,Kumasi Central Substation,Ashanti,Ghana,Compagnie Ivoirienne d'Electricite,CIE,CIE
+52,5,38,Elubo Border Station,42,Abidjan Transmission Hub,330,141.3,184.6,Active,Overhead,Elubo Border Station,Cote d'Ivoire border,Cote,Abidjan Transmission Hub,Cote d'Ivoire,Cote,Compagnie Ivoirienne d'Electricite,CIE,CIE
+53,6,39,Aflao Border Station,2,Tema Substation,330,157.9,207.8,Active,Overhead,Aflao Border Station,Togo border,Togo,Tema Substation,Greater Accra,Ghana,Communaute Electrique du Benin,CEB,CEB
+54,6,39,Aflao Border Station,40,Lome Transmission Hub,330,3.8,323.5,Active,Overhead,Aflao Border Station,Togo border,Togo,Lome Transmission Hub,Togo,Togo,Communaute Electrique du Benin,CEB,CEB
+55,6,40,Lome Transmission Hub,41,Cotonou Transmission Hub,330,150.0,326.6,Active,Overhead,Lome Transmission Hub,Togo,Togo,Cotonou Transmission Hub,Benin,Benin,Communaute Electrique du Benin,CEB,CEB
