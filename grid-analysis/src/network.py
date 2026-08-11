@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 """NetworkX graph construction, centrality measures, and N-1 contingency analysis.
+=======
+"""NetworkX graph construction and network analysis (Week 2 / Part A Task 2.1).
+>>>>>>> c2638f0b19c63d87a9326540c1ee0645f21bb530
 
 The grid is modelled as an undirected graph: AC power can flow either way
 along a line depending on system conditions, unlike a scheduled flight with
@@ -44,7 +48,14 @@ def build_graph(substations, lines):
 
 
 def compute_centrality(G):
+<<<<<<< HEAD
     """Return a DataFrame of per-substation network metrics, indexed by Substation ID."""
+=======
+    """Return a DataFrame of per-substation centrality measures, indexed by Substation ID.
+
+    Covers Task 2.1's 'Critical Substation Analysis' and 'Centrality Analysis'.
+    """
+>>>>>>> c2638f0b19c63d87a9326540c1ee0645f21bb530
     degree = nx.degree_centrality(G)
     betweenness = nx.betweenness_centrality(G)
     closeness = nx.closeness_centrality(G)
@@ -69,6 +80,63 @@ def get_connected_components(G):
     return sorted(nx.connected_components(G), key=len, reverse=True)
 
 
+<<<<<<< HEAD
+=======
+def largest_component_subgraph(G):
+    """Return the induced subgraph of the largest connected component.
+
+    Diameter and average shortest path length are only defined for a
+    connected graph, so these metrics are computed on the largest piece
+    when the network isn't fully connected.
+    """
+    largest = get_connected_components(G)[0]
+    return G.subgraph(largest).copy()
+
+
+def detect_communities(G):
+    """Greedy modularity-based community detection (Task 2.1's 'Community Detection').
+
+    Returns a list of node-id sets, one per detected community.
+    """
+    return [set(c) for c in nx.algorithms.community.greedy_modularity_communities(G)]
+
+
+def find_bridges(G):
+    """Lines whose removal alone would split the network - 'bridge lines' /
+    single points of connection, per Task 2.1's 'Analyse network structure'.
+
+    Returns a list of (substation_id_a, substation_id_b) tuples.
+    """
+    return list(nx.bridges(G))
+
+
+def network_summary(G):
+    """High-level structural metrics for the whole network (Task 2.1).
+
+    Diameter, average shortest path length, and global efficiency are
+    computed on the largest connected component when the graph isn't fully
+    connected, since they're undefined (infinite) across separate islands.
+    """
+    components = get_connected_components(G)
+    largest = largest_component_subgraph(G)
+
+    return {
+        "nodes": G.number_of_nodes(),
+        "edges": G.number_of_edges(),
+        "connected_components": len(components),
+        "component_sizes": [len(c) for c in components],
+        "largest_component_size": len(largest),
+        "diameter_of_largest_component": nx.diameter(largest) if len(largest) > 1 else 0,
+        "average_shortest_path_length_of_largest_component":
+            nx.average_shortest_path_length(largest) if len(largest) > 1 else 0.0,
+        "global_efficiency": nx.global_efficiency(G),
+        "average_clustering_coefficient": nx.average_clustering(G),
+        "num_communities": len(detect_communities(G)),
+        "num_bridges": len(find_bridges(G)),
+    }
+
+
+>>>>>>> c2638f0b19c63d87a9326540c1ee0645f21bb530
 def n1_contingency(G, node_id):
     """Remove node_id from a copy of G and compare connectivity before/after.
 

@@ -1,7 +1,14 @@
 """Loading, cleaning, validation, and merging for the grid-analysis datasets.
 
+<<<<<<< HEAD
 Ports and extends the ad-hoc checks that used to live in "examined data.py"
 into reusable functions shared by the notebooks, the dashboard, and the tests.
+=======
+Implements Week 1 / Part A Task 1.1 (Data Cleaning and Preprocessing) and
+Task 1.3 (Data Integration and Relationship Mapping). Ports and extends the
+ad-hoc checks that used to live in "examined data.py" into reusable
+functions shared by the notebook and the tests.
+>>>>>>> c2638f0b19c63d87a9326540c1ee0645f21bb530
 """
 from pathlib import Path
 

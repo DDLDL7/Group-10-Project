@@ -6,12 +6,25 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+<<<<<<< HEAD
 from src.network import build_graph, compute_centrality, get_connected_components, n1_contingency
 
 
 def _star_graph_frames():
     """Hub (id 1) connected to four spokes (ids 2-5) — removing the hub
     should fragment the network from 1 component into 4 isolated ones."""
+=======
+from src.network import (
+    build_graph, compute_centrality, get_connected_components, largest_component_subgraph,
+    detect_communities, find_bridges, network_summary, n1_contingency,
+)
+
+
+def _star_graph_frames():
+    """Hub (id 1) connected to four spokes (ids 2-5) - removing the hub
+    should fragment the network from 1 component into 4 isolated ones.
+    Every edge in a star is a bridge, and the diameter is 2 (leaf-hub-leaf)."""
+>>>>>>> c2638f0b19c63d87a9326540c1ee0645f21bb530
     substations = pd.DataFrame([
         {"Substation ID": sid, "Name": f"Sub {sid}", "Region": "Test Region",
          "Country": "Ghana", "Voltage (kV)": 33, "Capacity (MVA)": 50.0, "Status": "Active"}
@@ -26,6 +39,26 @@ def _star_graph_frames():
     return substations, lines
 
 
+<<<<<<< HEAD
+=======
+def _two_component_frames():
+    """Two separate triangles (1-2-3 and 4-5-6), not connected to each other."""
+    substations = pd.DataFrame([
+        {"Substation ID": sid, "Name": f"Sub {sid}", "Region": "Test Region",
+         "Country": "Ghana", "Voltage (kV)": 33, "Capacity (MVA)": 50.0, "Status": "Active"}
+        for sid in range(1, 7)
+    ])
+    edges = [(1, 2), (2, 3), (1, 3), (4, 5), (5, 6), (4, 6)]
+    lines = pd.DataFrame([
+        {"Line ID": lid, "Source Substation ID": a, "Destination Substation ID": b,
+         "Length (km)": 10.0, "Voltage (kV)": 33, "Capacity (MVA)": 80.0,
+         "Status": "Active", "Line Type": "Overhead"}
+        for lid, (a, b) in enumerate(edges, start=1)
+    ])
+    return substations, lines
+
+
+>>>>>>> c2638f0b19c63d87a9326540c1ee0645f21bb530
 def test_build_graph_node_and_edge_counts_match_input():
     substations, lines = _star_graph_frames()
     G = build_graph(substations, lines)
@@ -63,6 +96,69 @@ def test_centrality_values_fall_in_unit_interval():
     assert df["degree_centrality"].idxmax() == 1
 
 
+<<<<<<< HEAD
+=======
+def test_connected_components_on_two_separate_triangles():
+    substations, lines = _two_component_frames()
+    G = build_graph(substations, lines)
+    components = get_connected_components(G)
+
+    assert len(components) == 2
+    assert sorted(len(c) for c in components) == [3, 3]
+
+
+def test_largest_component_subgraph():
+    substations, lines = _two_component_frames()
+    G = build_graph(substations, lines)
+    sub = largest_component_subgraph(G)
+
+    assert sub.number_of_nodes() == 3
+    assert set(sub.nodes) in ({1, 2, 3}, {4, 5, 6})
+
+
+def test_find_bridges_on_star_graph():
+    # every edge in a star (tree) is a bridge - removing any one disconnects a leaf
+    substations, lines = _star_graph_frames()
+    G = build_graph(substations, lines)
+    bridges = find_bridges(G)
+
+    assert len(bridges) == 4
+
+
+def test_find_bridges_on_triangle_has_none():
+    # a triangle has no bridges - every edge lies on a cycle
+    substations, lines = _two_component_frames()
+    G = build_graph(substations, lines)
+    bridges = find_bridges(G)
+
+    assert len(bridges) == 0
+
+
+def test_detect_communities_covers_every_node():
+    substations, lines = _two_component_frames()
+    G = build_graph(substations, lines)
+    communities = detect_communities(G)
+
+    all_nodes = set().union(*communities)
+    assert all_nodes == set(G.nodes)
+
+
+def test_network_summary_on_star_graph():
+    substations, lines = _star_graph_frames()
+    G = build_graph(substations, lines)
+    summary = network_summary(G)
+
+    assert summary["nodes"] == 5
+    assert summary["edges"] == 4
+    assert summary["connected_components"] == 1
+    assert summary["largest_component_size"] == 5
+    assert summary["diameter_of_largest_component"] == 2
+    assert summary["average_shortest_path_length_of_largest_component"] == pytest.approx(1.6)
+    assert summary["global_efficiency"] == pytest.approx(0.7)
+    assert summary["num_bridges"] == 4
+
+
+>>>>>>> c2638f0b19c63d87a9326540c1ee0645f21bb530
 def test_n1_contingency_detects_fragmentation_on_star_graph():
     substations, lines = _star_graph_frames()
     G = build_graph(substations, lines)
