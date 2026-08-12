@@ -1,6 +1,7 @@
+import os
 import pandas as pd
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 
 utilities = pd.read_csv('utilities.csv')
@@ -42,7 +43,10 @@ print(lines['Utility ID'].value_counts())
 connections = pd.concat([lines['Source Substation'], lines['Destination Substation']])
 print(connections.value_counts().head(10))
 
+substations['Region'].value_counts().plot(kind='bar', title='Substations by Region')
+plt.savefig('eda_regions.png')
+plt.show()
 
-
-
-
+connections.value_counts().head(10).plot(kind='bar', title='Top 10 Most-Connected Substations')
+plt.savefig('eda_top_substations.png')
+plt.show()
