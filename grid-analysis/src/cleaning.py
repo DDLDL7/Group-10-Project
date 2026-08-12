@@ -123,3 +123,17 @@ def merge_all(utilities, substations, lines):
     ).rename(columns={"Name": "Utility Name", "Alias": "Utility Alias", "Code": "Utility Code"})
 
     return merged
+
+
+def utility_region_line_counts(merged):
+    """Line counts per utility per source region (Part B Task 4's 'Analyse
+    lines by utility and source region'), sorted with the busiest
+    utility/region combinations first.
+    """
+    return (
+        merged.groupby(["Utility Code", "Source Region"])
+        .size()
+        .reset_index(name="Line Count")
+        .sort_values("Line Count", ascending=False)
+        .reset_index(drop=True)
+    )

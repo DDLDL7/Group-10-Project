@@ -5,7 +5,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.cleaning import clean_and_validate, merge_all
+from src.cleaning import clean_and_validate, merge_all, utility_region_line_counts
 
 
 def _sample_frames():
@@ -82,3 +82,23 @@ def test_merge_all_enriches_lines_with_names_and_utility_info():
     assert row["Source Name"] == "Achimota Substation"
     assert row["Destination Name"] == "Tema Substation"
     assert row["Utility Alias"] == "ECG"
+
+
+def test_utility_region_line_counts_groups_and_sorts_correctly():
+    merged = pd.DataFrame([
+        {"Utility Code": "ECG", "Source Region": "Greater Accra"},
+        {"Utility Code": "ECG", "Source Region": "Greater Accra"},
+        {"Utility Code": "ECG", "Source Region": "Ashanti"},
+        {"Utility Code": "GRD", "Source Region": "Greater Accra"},
+    ])
+    counts = utility_region_line_counts(merged)
+
+    # busiest combination (ECG / Greater Accra, count 2) must come first
+    top = counts.iloc[0]
+    assert top["Utility Code"] == "ECG"
+    assert top["Source Region"] == "Greater Accra"
+    assert top["Line Count"] == 2
+
+    # every other combination should have a lower count than the top row
+    assert (counts["Line Count"].iloc[1:] <= 1).all()
+    assert len(counts) == 3  # three distinct (utility, region) combinations

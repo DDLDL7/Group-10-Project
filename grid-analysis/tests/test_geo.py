@@ -3,6 +3,7 @@ from pathlib import Path
 
 import folium
 import pandas as pd
+import plotly.graph_objects as go
 import pytest
 from geopy.distance import geodesic
 
@@ -11,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.geo import (
     build_folium_map, verify_line_distances, categorize_line_distances,
     find_geographic_clusters, regional_connectivity, geographic_gaps,
+    build_plotly_substation_map,
 )
 
 
@@ -128,3 +130,14 @@ def test_build_folium_map_returns_map_with_utility_layers():
     assert isinstance(m, folium.Map)
     html = m._repr_html_()
     assert "leaflet" in html.lower()
+
+
+def test_build_plotly_substation_map_plots_every_substation_colored_by_region():
+    utilities, substations, lines = _four_substation_frames()
+    fig = build_plotly_substation_map(substations, color_by="Region")
+
+    assert isinstance(fig, go.Figure)
+    # one trace per distinct region value (North, South)
+    assert len(fig.data) == substations["Region"].nunique()
+    total_points_plotted = sum(len(trace.lat) for trace in fig.data)
+    assert total_points_plotted == len(substations)

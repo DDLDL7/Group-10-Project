@@ -8,6 +8,7 @@ proximity-based geographic clusters of substations, and summarizes regional
 import folium
 import networkx as nx
 import pandas as pd
+import plotly.express as px
 from geopy.distance import geodesic
 
 VOLTAGE_COLORS = {
@@ -196,3 +197,19 @@ def geographic_gaps(substations):
     median_count = by_region["substation_count"].median()
     by_region["below_median_density"] = by_region["substation_count"] < median_count
     return by_region.sort_values("substation_count")
+
+
+def build_plotly_substation_map(substations, color_by="Region"):
+    """Interactive Plotly scatter-geo map of substations (Part B Task 5),
+    a lighter-weight complement to `build_folium_map`'s fuller Leaflet map -
+    useful for quick exploration inside a notebook without the layer
+    controls. `color_by` can be any substation column, e.g. 'Region' or
+    'Voltage (kV)'.
+    """
+    fig = px.scatter_geo(
+        substations, lat="Latitude", lon="Longitude", hover_name="Name",
+        color=substations[color_by].astype(str), title="National Grid Substation Locations",
+        projection="natural earth",
+    )
+    fig.update_layout(legend_title_text=color_by)
+    return fig
