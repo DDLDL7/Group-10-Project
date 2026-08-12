@@ -1,50 +1,15 @@
-"""
-Task 2.3: Business Intelligence and Reliability Analysis
-==========================================================
-Owner (per project spec): Team Member 2 — Data Analyst
-
-Extracts business and reliability insights from the cleaned grid datasets:
-    A. Utility Footprint Analysis   — who operates the most infrastructure, and where
-    B. Capacity Utilization Mapping — which substations look under/over-provisioned
-    C. Growth Opportunity Analysis  — which regions are thin on infrastructure
-    D. Asset Age Profile            — how old the network is, region by region
-    E. Reliability Proxy Analysis   — a composite "at-risk" score per substation
-
-IMPORTANT CAVEAT (documented per the project brief): this dataset is synthetic.
-There is no real load, demand, or outage-history data, so "utilization" and
-"reliability" below are proxies built from the fields we do have (rated
-capacity, connection count, maintenance status, commissioning year). They are
-structural indicators, not measurements of real electrical behaviour — treat
-every number here as "worth investigating further", not as a verified fact
-about Ghana's actual grid.
-
-Outputs:
-    - Printed tables for every section (console)
-    - 4 PNG charts (saved next to this script)
-    - task_2_3_findings.md — a short auto-generated summary/recommendations doc
-"""
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-REFERENCE_YEAR = 2026  # ages computed "as of" 2026 — documented assumption
+REFERENCE_YEAR = 2026
 
-# ---------------------------------------------------------------------------
-# 0. Load + join what we need
-# ---------------------------------------------------------------------------
 utilities = pd.read_csv('utilities.csv')
 substations = pd.read_csv('substations.csv')
 lines = pd.read_csv('lines.csv')
 
-# Only consider substations/lines that are actually in service for the
-# capacity- and footprint-style analyses. Decision, documented: "usable"
-# infrastructure = Active status. Inactive/Under-Maintenance assets are kept
-# in the reliability section instead, where their status is the whole point.
 active_subs = substations[substations['Status'] == 'Active'].copy()
 
-# Attach the source substation's Region to every line, and the owning
-# utility's short Code, so we can slice lines by both region and operator.
 lines_enriched = (
     lines
     .merge(substations[['Substation ID', 'Region']],
@@ -58,13 +23,6 @@ print("=" * 70)
 print("TASK 2.3 — BUSINESS INTELLIGENCE AND RELIABILITY ANALYSIS")
 print("=" * 70)
 
-# ---------------------------------------------------------------------------
-# A. Utility Footprint Analysis
-# ---------------------------------------------------------------------------
-# Substations don't carry a "utility" field in this dataset — only lines do
-# (Utility ID). So "footprint" is measured as: how many lines does each
-# utility operate, how much of that is by region, and how much by voltage
-# tier (a rough proxy for distribution vs. transmission-level presence).
 print("\n--- A. Utility Footprint Analysis ---\n")
 
 footprint_national = (
@@ -97,15 +55,6 @@ top_utility = footprint_national.index[0]
 print(f"Finding: {top_utility} operates the most lines nationally "
       f"({footprint_national.loc[top_utility, 'lines_operated']} of {len(lines)}).")
 
-# ---------------------------------------------------------------------------
-# B. Capacity Utilization Mapping
-# ---------------------------------------------------------------------------
-# Proxy for "utilization" (no real load data exists): compare each active
-# substation's own rated capacity against the combined rated capacity of the
-# lines connected to it. A substation whose connected lines carry far more
-# capacity than the substation itself is rated for looks like a candidate for
-# an upgrade; one whose connected lines are tiny relative to its own rating
-# looks over-provisioned for what it actually serves.
 print("\n--- B. Capacity Utilization Mapping (proxy) ---\n")
 
 line_capacity_at_sub = pd.concat([
@@ -138,9 +87,6 @@ print(util_map.sort_values('utilization_ratio', ascending=False)
       [['Name', 'Region', 'Capacity (MVA)', 'connected_line_capacity_mva', 'utilization_ratio']]
       .head(10).to_string(index=False), "\n")
 
-# Also keep the capacity-concentration view (which substations dominate their
-# region's/the nation's installed capacity) — a related but distinct BI
-# question: risk from concentration, not under/over-sizing.
 total_capacity = active_subs['Capacity (MVA)'].sum()
 active_subs['national_share_%'] = (active_subs['Capacity (MVA)'] / total_capacity * 100).round(2)
 region_totals = active_subs.groupby('Region')['Capacity (MVA)'].transform('sum')
@@ -151,18 +97,6 @@ print(f"Substations carrying 50%+ of their region's capacity (single-point risk)
 print(concentration_risk[['Name', 'Region', 'Capacity (MVA)', 'regional_share_%']]
       .to_string(index=False), "\n")
 
-# ---------------------------------------------------------------------------
-# C. Growth Opportunity Analysis
-# ---------------------------------------------------------------------------
-# No population or land-area data exists for the regions, so "underserved" is
-# necessarily a relative, infrastructure-only proxy: regions with the fewest
-# active substations and the least installed capacity. Flag the bottom
-# quartile as growth candidates, and say so explicitly in the caveat.
-#
-# Restricted to Ghana: the WAPP cross-border hubs (Benin, Togo, Guinea, ...)
-# are each modelled as exactly one interconnection substation by design, so
-# including them would just flag "every foreign hub" as a growth opportunity
-# rather than surfacing genuinely thin domestic regions.
 print("\n--- C. Growth Opportunity Analysis (proxy — infrastructure density only, Ghana regions) ---\n")
 
 region_summary = (
@@ -180,9 +114,6 @@ growth_regions = region_summary[region_summary['growth_candidate']].index.tolist
 print(f"Finding: regions with the fewest active substations (bottom quartile, "
       f"<= {growth_cutoff:.1f} substations): {growth_regions}")
 
-# ---------------------------------------------------------------------------
-# D. Asset Age Profile
-# ---------------------------------------------------------------------------
 print("\n--- D. Asset Age Profile ---\n")
 
 substations['age'] = REFERENCE_YEAR - substations['Commissioning Year']
@@ -211,17 +142,6 @@ oldest_region = age_by_region.index[0]
 print(f"Finding: {oldest_region} has the oldest infrastructure on average "
       f"({age_by_region.loc[oldest_region, 'mean']:.1f} years).")
 
-# ---------------------------------------------------------------------------
-# E. Reliability Proxy Analysis
-# ---------------------------------------------------------------------------
-# Composite, unweighted-toward-any-single-signal proxy combining:
-#   - age              (older assets -> higher fault-risk proxy)
-#   - degree (connections) (fewer connections -> less redundancy if it fails)
-#   - regional maintenance share (more lines under maintenance nearby -> more
-#     operational strain in that area right now)
-# This is explicitly NOT a substitute for the formal centrality metrics
-# computed with NetworkX in Task 2.1 — it's a lightweight, pandas-only signal
-# for the BI report.
 print("\n--- E. Reliability Proxy Analysis ---\n")
 
 maintenance_share_by_region = (
@@ -265,9 +185,6 @@ print("Top 10 substations by composite reliability-risk proxy "
 print(top_risk[['Name', 'Region', 'age', 'degree', 'pct_lines_under_maintenance', 'risk_score']]
       .to_string(index=False), "\n")
 
-# ---------------------------------------------------------------------------
-# Charts
-# ---------------------------------------------------------------------------
 fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 footprint_national['lines_operated'].plot(kind='bar', ax=axes[0], color='#4C72B0')
 axes[0].set_title('Lines Operated by Utility (national)')
@@ -311,9 +228,6 @@ plt.close(fig)
 print("Saved charts: utility_footprint.png, capacity_utilization_flags.png, "
       "age_band_distribution.png, reliability_risk_top10.png")
 
-# ---------------------------------------------------------------------------
-# Auto-generated strategic recommendations document
-# ---------------------------------------------------------------------------
 upgrade_candidates = util_map[
     util_map['utilization_flag'] == 'Potential upgrade candidate (under-provisioned)'
 ]
