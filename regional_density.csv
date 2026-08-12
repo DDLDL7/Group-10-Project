@@ -1,0 +1,11 @@
+Region,Substation_Count,Avg_Capacity_MVA,Total_Capacity_MVA,Active_Count,Area_km2,Substations_per_1000km2
+Greater Accra,6,86.7,520.2,6,3245,1.849
+Central,4,79.1,316.2,4,9826,0.407
+Upper East,2,260.4,520.7,2,8842,0.226
+Eastern,4,207.1,828.5,4,19323,0.207
+Ashanti,5,219.9,1099.6,5,24389,0.205
+Volta,4,117.6,470.3,4,20570,0.194
+Western,4,80.8,323.0,4,23921,0.167
+Bono,3,84.2,252.6,3,39557,0.076
+Upper West,1,27.1,27.1,1,18476,0.054
+Northern,3,51.9,155.6,2,70384,0.043
