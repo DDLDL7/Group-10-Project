@@ -225,8 +225,17 @@ plt.tight_layout()
 plt.savefig('reliability_risk_top10.png')
 plt.close(fig)
 
+fig, ax = plt.subplots(figsize=(8, 6))
+bar_colors = region_summary['growth_candidate'].map({True: '#C44E52', False: '#4C72B0'})
+region_summary['substation_count'].plot(kind='barh', ax=ax, color=bar_colors)
+ax.set_title('Active Substations by Region, Ghana (red = growth-opportunity candidate)')
+ax.set_xlabel('Number of active substations')
+plt.tight_layout()
+plt.savefig('growth_opportunities.png')
+plt.close(fig)
+
 print("Saved charts: utility_footprint.png, capacity_utilization_flags.png, "
-      "age_band_distribution.png, reliability_risk_top10.png")
+      "age_band_distribution.png, reliability_risk_top10.png, growth_opportunities.png")
 
 upgrade_candidates = util_map[
     util_map['utilization_flag'] == 'Potential upgrade candidate (under-provisioned)'
@@ -255,6 +264,7 @@ operational fact about Ghana's actual grid.*
   infrastructure): **{', '.join(growth_regions) if growth_regions else 'none'}**.
 - This is an infrastructure-density proxy only — no population or land-area
   data was available to weight it against actual demand.
+- See `growth_opportunities.png` for the full region ranking.
 
 ## D. Asset Age Profile
 - **{oldest_region}** has the oldest infrastructure on average

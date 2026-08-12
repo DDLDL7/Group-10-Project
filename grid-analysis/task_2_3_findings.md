@@ -22,6 +22,7 @@ operational fact about Ghana's actual grid.*
   infrastructure): **Upper West, Northern, Upper East**.
 - This is an infrastructure-density proxy only — no population or land-area
   data was available to weight it against actual demand.
+- See `growth_opportunities.png` for the full region ranking.
 
 ## D. Asset Age Profile
 - **Upper West** has the oldest infrastructure on average
