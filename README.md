@@ -8,8 +8,4 @@ Three related, independent builds in one repo:
 
 Each component is a separate, standalone codebase with its own `requirements.txt` and its own README with setup/run instructions.
 
-## Other files
-
-- **[docs/](docs/)** — a plain-language project guide, architecture notes for grid-analysis (ERD, data dictionary), and the original course-assignment materials.
-
 (The original build-brief and technical-specification documents that used to be linked here were removed from the repo; ask the team if you need them.)

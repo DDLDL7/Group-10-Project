@@ -17,9 +17,6 @@ electricity infrastructure.
 | `substations.csv` | 44 | 36 substations across 10 Ghanaian regions + 8 cross-border interconnection/hub substations |
 | `lines.csv` | 55 | Transmission/distribution lines, including intra-region mesh, inter-regional backbone, and WAPP cross-border interconnections |
 
-Full field-by-field description: `../docs/architecture-diagrams/grid-analysis-data-dictionary.md`.
-Entity-relationship diagram: `../docs/architecture-diagrams/grid-analysis-erd.md`.
-
 ## 2. Cleaning steps
 
 `src/cleaning.py`'s `clean_and_validate()` coerces numeric columns, drops
