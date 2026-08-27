@@ -1,18 +1,9 @@
-"""Business Intelligence and Reliability Analysis (Week 2 / Part A Task 2.3).
-
-Every metric here is an explicit PROXY: the synthetic dataset has no real
-load, population, or outage-history data, so "risk", "growth opportunity",
-and "reliability" are structural stand-ins built from capacity, age,
-maintenance status, region, and (optionally) network centrality - not
-verified operational findings.
-"""
+# business type stats, all just estimates not real measurements
 import pandas as pd
 
 
 def utility_infrastructure_footprint(merged):
-    """Which utility operates the most infrastructure, by region and by
-    voltage tier (Task 2.3's 'Utility Footprint Analysis').
-    """
+    # which utility runs the most stuff, by region and voltage
     by_region = (
         merged.groupby(["Utility Alias", "Source Region"])
         .size().reset_index(name="Line Count")
@@ -23,11 +14,7 @@ def utility_infrastructure_footprint(merged):
 
 
 def capacity_utilization_flags(substations, lines, low_pct=0.25, high_pct=0.75):
-    """Flag substations and lines whose capacity sits in the bottom/top
-    quartile for their voltage tier - a proxy for "upgrade candidate" (low)
-    vs "over-provisioned" (high), since real utilization would require
-    actual load/flow data this dataset doesn't have.
-    """
+    # flags stuff that seems low or high capacity for its voltage tier
     def _flag(df, capacity_col, voltage_col, id_cols):
         out = df.copy()
         low = out.groupby(voltage_col)[capacity_col].transform(lambda s: s.quantile(low_pct))
@@ -47,7 +34,6 @@ def capacity_utilization_flags(substations, lines, low_pct=0.25, high_pct=0.75):
 
 
 def line_maintenance_proportion(merged):
-    """Proportion of lines 'Under Maintenance' by region and by utility."""
     by_region = (
         merged.groupby("Source Region")["Status"]
         .apply(lambda s: (s == "Under Maintenance").mean())
@@ -64,9 +50,7 @@ def line_maintenance_proportion(merged):
 
 
 def asset_age_profile(substations):
-    """Compare older vs newer infrastructure: substation counts, average
-    capacity, and active-status rate per commissioning decade.
-    """
+    # groups substations by the decade they were built
     df = substations.copy()
     df["decade"] = (df["Commissioning Year"] // 10 * 10).astype(int).astype(str) + "s"
     profile = df.groupby("decade").agg(
@@ -78,12 +62,7 @@ def asset_age_profile(substations):
 
 
 def capacity_concentration(substations, top_fraction=0.1):
-    """What share of total rated capacity sits in the top `top_fraction` of
-    substations by capacity - a concentration/risk indicator: the more
-    capacity concentrated in a few substations, the more a single loss
-    could matter (a structural echo of the N-1 analysis, from a capacity
-    rather than connectivity angle).
-    """
+    # how much capacity sits in just the top substations
     sorted_capacity = substations["Capacity (MVA)"].sort_values(ascending=False)
     n_top = max(1, int(len(sorted_capacity) * top_fraction))
     top_share = sorted_capacity.head(n_top).sum() / sorted_capacity.sum()
@@ -95,10 +74,7 @@ def capacity_concentration(substations, top_fraction=0.1):
 
 
 def growth_opportunities(substations):
-    """Regions with both low substation count and low total capacity
-    relative to other regions - a proxy for "growth opportunity", since no
-    real population/demand data exists to assess actual need.
-    """
+    # regions that seem underbuilt compared to others
     by_region = substations.groupby("Region").agg(
         substation_count=("Substation ID", "count"),
         total_capacity_mva=("Capacity (MVA)", "sum"),
@@ -113,12 +89,7 @@ def growth_opportunities(substations):
 
 
 def reliability_proxy(substations, merged, centrality=None):
-    """Composite reliability-risk proxy per substation: combines asset age,
-    active status, how many of its lines are under maintenance, and
-    (optionally) network centrality from src.network.compute_centrality.
-
-    Framed explicitly as a proxy - not a real fault-probability model.
-    """
+    # rough risk score, mixes age, maintenance, and network importance
     lines_under_maint = (
         merged[merged["Status"] == "Under Maintenance"]
         .groupby("Source Substation ID").size()
@@ -140,9 +111,6 @@ def reliability_proxy(substations, merged, centrality=None):
         df["degree_centrality"] = 0.0
         df["betweenness_centrality"] = 0.0
 
-    # Simple weighted proxy score: older + under-maintenance + structurally
-    # important substations score higher. Weights are illustrative, not
-    # calibrated against any real engineering standard.
     age_norm = (df["age_years"] - df["age_years"].min()) / max(
         1, (df["age_years"].max() - df["age_years"].min())
     )

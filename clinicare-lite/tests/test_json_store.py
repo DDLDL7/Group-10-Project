@@ -17,22 +17,16 @@ def test_save_then_load_round_trips(tmp_path):
 
 
 def test_save_json_truncates_correctly_when_new_payload_is_shorter(tmp_path):
-    """The exact bug the spec calls out: writing a shorter JSON payload
-    over a longer previous one, in 'r+' mode, without truncate(), leaves
-    trailing bytes from the old content and corrupts the file. save_json
-    must not do that.
-    """
+    # writing a short file over a long one shouldn't leave old bytes behind
     path = tmp_path / "data.json"
 
     large_payload = {f"key_{i}": "x" * 50 for i in range(20)}
     save_json(path, large_payload)
-    assert len(path.read_text()) > 500  # sanity check it's actually large
+    assert len(path.read_text()) > 500  # just checking it's actually big
 
     small_payload = {"only_key": "short"}
     save_json(path, small_payload)
 
-    # If truncate() were skipped, this would raise json.JSONDecodeError
-    # ("Extra data") because of leftover bytes from large_payload.
     assert load_json(path) == small_payload
 
 

@@ -15,8 +15,7 @@ import utils.file_handler as file_handler_mod
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    """A Flask test client wired to an isolated, per-test JSON data directory
-    so route tests never touch the real data/ folder or each other."""
+    # test client that uses fake data files instead of the real ones
     monkeypatch.setattr(user_mod, "USERS_PATH", tmp_path / "users.json")
     monkeypatch.setattr(clinic_mod, "CLINICS_PATH", tmp_path / "clinics.json")
     monkeypatch.setattr(task_mod, "HEALTH_TASKS_PATH", tmp_path / "health_tasks.json")

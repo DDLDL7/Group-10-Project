@@ -13,9 +13,7 @@ from src.network import (
 
 
 def _star_graph_frames():
-    """Hub (id 1) connected to four spokes (ids 2-5) - removing the hub
-    should fragment the network from 1 component into 4 isolated ones.
-    Every edge in a star is a bridge, and the diameter is 2 (leaf-hub-leaf)."""
+    # one hub connected to four other nodes
     substations = pd.DataFrame([
         {"Substation ID": sid, "Name": f"Sub {sid}", "Region": "Test Region",
          "Country": "Ghana", "Voltage (kV)": 33, "Capacity (MVA)": 50.0, "Status": "Active"}
@@ -31,7 +29,7 @@ def _star_graph_frames():
 
 
 def _two_component_frames():
-    """Two separate triangles (1-2-3 and 4-5-6), not connected to each other."""
+    # two separate triangles, not connected
     substations = pd.DataFrame([
         {"Substation ID": sid, "Name": f"Sub {sid}", "Region": "Test Region",
          "Country": "Ghana", "Voltage (kV)": 33, "Capacity (MVA)": 50.0, "Status": "Active"}
@@ -80,7 +78,7 @@ def test_centrality_values_fall_in_unit_interval():
                 "pagerank", "clustering_coefficient"]:
         assert (df[col] >= 0).all() and (df[col] <= 1).all()
 
-    # the hub (node 1) should have the highest degree centrality
+    # the hub should score highest
     assert df["degree_centrality"].idxmax() == 1
 
 
@@ -103,7 +101,7 @@ def test_largest_component_subgraph():
 
 
 def test_find_bridges_on_star_graph():
-    # every edge in a star (tree) is a bridge - removing any one disconnects a leaf
+    # every edge here is a bridge
     substations, lines = _star_graph_frames()
     G = build_graph(substations, lines)
     bridges = find_bridges(G)
@@ -112,7 +110,7 @@ def test_find_bridges_on_star_graph():
 
 
 def test_find_bridges_on_triangle_has_none():
-    # a triangle has no bridges - every edge lies on a cycle
+    # a triangle has no bridges
     substations, lines = _two_component_frames()
     G = build_graph(substations, lines)
     bridges = find_bridges(G)

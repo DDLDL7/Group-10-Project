@@ -18,33 +18,17 @@ DEFAULT_USERS = [
 ]
 
 
-# ============================================================
-# DATABASE CLASS
-# ============================================================
-#
-# All persistence AND business rules (validation, status transitions,
-# referential-integrity checks) live here, not in the Tkinter callbacks -
-# this is what makes the workflow testable with pytest without needing a
-# running GUI (see gridcare-lite/tests/).
-
+# handles the database stuff
 class Database:
 
     def __init__(self, database_name="gridcare.db"):
         self.database_name = database_name
         self.init_db()
 
-    # --------------------------------------------------------
-    # Connect to database
-    # --------------------------------------------------------
-
     def connect(self):
         conn = sqlite3.connect(self.database_name)
         conn.execute("PRAGMA foreign_keys = ON")
         return conn
-
-    # --------------------------------------------------------
-    # Create database tables from db/schema.sql
-    # --------------------------------------------------------
 
     def init_db(self):
         conn = self.connect()
@@ -55,10 +39,6 @@ class Database:
             conn.close()
 
         self.create_default_users()
-
-    # --------------------------------------------------------
-    # Create default users (bcrypt-hashed passwords)
-    # --------------------------------------------------------
 
     def create_default_users(self):
         conn = self.connect()
@@ -77,12 +57,6 @@ class Database:
 
         conn.commit()
         conn.close()
-
-    # --------------------------------------------------------
-    # Import substations.csv / lines.csv from the grid-analysis
-    # data-science component, so outages can only be logged against
-    # real substation IDs.
-    # --------------------------------------------------------
 
     def import_substations(self, filename=None):
         filename = filename or (GRID_DATA_DIR / "substations.csv")
@@ -143,12 +117,8 @@ class Database:
         except (sqlite3.Error, ValueError) as error:
             print("Error importing lines:", error)
 
-    # --------------------------------------------------------
-    # Authentication
-    # --------------------------------------------------------
-
     def verify_login(self, username, password):
-        """Return the (user_id, username, role) row on success, or None."""
+        # checks the password, returns the user or none
         conn = self.connect()
         cursor = conn.cursor()
         cursor.execute(
@@ -166,10 +136,6 @@ class Database:
             return None
 
         return (user_id, db_username, role)
-
-    # --------------------------------------------------------
-    # Outage reporting
-    # --------------------------------------------------------
 
     def substation_exists(self, substation_id):
         conn = self.connect()
@@ -210,10 +176,6 @@ class Database:
         rows = cursor.fetchall()
         conn.close()
         return rows
-
-    # --------------------------------------------------------
-    # Work order management
-    # --------------------------------------------------------
 
     def _outage_status(self, outage_id):
         conn = self.connect()
@@ -302,10 +264,6 @@ class Database:
         conn.close()
         return outage_id
 
-    # --------------------------------------------------------
-    # Customer complaints
-    # --------------------------------------------------------
-
     def log_complaint(self, customer_name, description, outage_id=None):
         if not customer_name or not customer_name.strip():
             raise ValueError("Customer name is required.")
@@ -330,10 +288,6 @@ class Database:
         complaint_id = cursor.lastrowid
         conn.close()
         return complaint_id
-
-    # --------------------------------------------------------
-    # Reports
-    # --------------------------------------------------------
 
     def get_reports(self):
         conn = self.connect()
@@ -373,10 +327,7 @@ class Database:
         }
 
 
-# ============================================================
-# LOGIN WINDOW
-# ============================================================
-
+# the login screen
 class LoginWindow(tk.Frame):
 
     def __init__(self, master, database, on_success):
@@ -438,10 +389,7 @@ class LoginWindow(tk.Frame):
         self.on_success(user)
 
 
-# ============================================================
-# MAIN DASHBOARD
-# ============================================================
-
+# the main screen after logging in
 class Dashboard(tk.Frame):
 
     def __init__(self, master, database, user, logout):
@@ -483,10 +431,6 @@ class Dashboard(tk.Frame):
 
         self.pack(fill="both", expand=True)
 
-    # ========================================================
-    # OUTAGE DASHBOARD
-    # ========================================================
-
     def outage_dashboard(self):
         window = tk.Toplevel(self.master)
         window.title("GridCare-Lite - Outage Dashboard")
@@ -506,10 +450,6 @@ class Dashboard(tk.Frame):
 
         ttk.Button(window, text="Refresh", command=load_outages).pack(pady=5)
         load_outages()
-
-    # ========================================================
-    # NEW OUTAGE FORM
-    # ========================================================
 
     def new_outage(self):
         window = tk.Toplevel(self.master)
@@ -564,10 +504,6 @@ class Dashboard(tk.Frame):
             window.destroy()
 
         ttk.Button(window, text="Submit Outage", command=save_outage).pack(pady=20)
-
-    # ========================================================
-    # WORK ORDER ASSIGNMENT
-    # ========================================================
 
     def assign_work_order(self):
         window = tk.Toplevel(self.master)
@@ -641,10 +577,6 @@ class Dashboard(tk.Frame):
 
         ttk.Button(window, text="Assign Work Order", command=save_work_order).pack(pady=20)
 
-    # ========================================================
-    # TECHNICIAN WORK ORDERS
-    # ========================================================
-
     def technician_orders(self):
         window = tk.Toplevel(self.master)
         window.title("GridCare-Lite - Technician Work Orders")
@@ -686,10 +618,6 @@ class Dashboard(tk.Frame):
 
         ttk.Button(window, text="Mark Selected Work Order Complete", command=complete_selected_work_order).pack(pady=10)
         load_orders()
-
-    # ========================================================
-    # CUSTOMER COMPLAINT
-    # ========================================================
 
     def complaint(self):
         window = tk.Toplevel(self.master)
@@ -737,10 +665,6 @@ class Dashboard(tk.Frame):
 
         ttk.Button(window, text="Save Complaint", command=save_complaint).pack(pady=20)
 
-    # ========================================================
-    # BASIC REPORTS
-    # ========================================================
-
     def reports(self):
         window = tk.Toplevel(self.master)
         window.title("GridCare-Lite - Reports")
@@ -770,10 +694,7 @@ class Dashboard(tk.Frame):
             region_table.insert("", "end", values=row)
 
 
-# ============================================================
-# MAIN APPLICATION
-# ============================================================
-
+# starts the whole app
 def main():
     database = Database()
     database.import_substations()

@@ -1,9 +1,4 @@
-"""ClinicCare-Lite entry point (Flask web app).
-
-Administrative and communication only - this system never diagnoses,
-interprets symptoms, or recommends treatment. See README.md's scope
-boundary.
-"""
+# the flask app, just admin and messages, no medical stuff
 import os
 from collections import Counter
 from datetime import date, datetime
@@ -26,10 +21,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("CLINICARE_SECRET_KEY", "dev-secret-key-change-in-production")
 
 
-# ---------------------------------------------------------------------------
-# Access control helpers
-# ---------------------------------------------------------------------------
-
+# who is logged in right now
 def current_user():
     if "user_id" not in session:
         return None
@@ -61,7 +53,7 @@ def own_clinic_or_404(user):
 def own_task_or_404(task_id, patient_id):
     task = HealthTask.get(task_id)
     if task is None or task["patient_id"] != patient_id:
-        abort(404)  # incorrect task ownership
+        abort(404)  # not this patient's task
     return task
 
 
@@ -71,10 +63,6 @@ def _bar_chart_html(x, y, title, x_title, y_title):
                           margin=dict(l=40, r=20, t=40, b=40), height=350)
     return figure.to_html(full_html=False, include_plotlyjs="cdn")
 
-
-# ---------------------------------------------------------------------------
-# Home / registration / login
-# ---------------------------------------------------------------------------
 
 @app.route("/")
 def index():
@@ -145,10 +133,7 @@ def logout():
     return redirect(url_for("login"))
 
 
-# ---------------------------------------------------------------------------
-# Clinician: dashboard, task creation, submission review
-# ---------------------------------------------------------------------------
-
+# clinician pages start here
 @app.route("/clinician")
 @login_required(role="clinician")
 def clinician_dashboard():
@@ -259,10 +244,6 @@ def download_submission(submission_id):
     return send_file(submission["file_path"], as_attachment=True)
 
 
-# ---------------------------------------------------------------------------
-# Clinician: announcements
-# ---------------------------------------------------------------------------
-
 @app.route("/clinician/announcements/new", methods=["GET", "POST"])
 @login_required(role="clinician")
 def new_announcement():
@@ -281,10 +262,7 @@ def new_announcement():
     return render_template("new_announcement.html")
 
 
-# ---------------------------------------------------------------------------
-# Messaging (shared between roles - each side sees only its own conversation)
-# ---------------------------------------------------------------------------
-
+# messaging, same for both roles
 @app.route("/messages")
 @login_required()
 def inbox():
@@ -311,10 +289,6 @@ def conversation(other_user_id):
     return render_template("conversation.html", user=user, other=other, messages=messages)
 
 
-# ---------------------------------------------------------------------------
-# Clinician: operational analytics (aggregated, clinic-scoped only)
-# ---------------------------------------------------------------------------
-
 @app.route("/clinician/analytics")
 @login_required(role="clinician")
 def clinician_analytics():
@@ -335,7 +309,7 @@ def clinician_analytics():
         turnaround_hours.append((reviewed_at - submitted_at).total_seconds() / 3600)
     avg_turnaround = sum(turnaround_hours) / len(turnaround_hours) if turnaround_hours else 0.0
 
-    monthly_volume = Counter(t["created_at"][:7] for t in tasks)  # 'YYYY-MM'
+    monthly_volume = Counter(t["created_at"][:7] for t in tasks)  # like 2026-08
     announcements = Message.announcements()
     my_announcements = [a for a in announcements if a["sender_id"] == user["user_id"]]
 
@@ -357,10 +331,7 @@ def clinician_analytics():
     return render_template("clinician_analytics.html", analytics=analytics, chart_html=chart_html)
 
 
-# ---------------------------------------------------------------------------
-# Patient: dashboard, task submission
-# ---------------------------------------------------------------------------
-
+# patient pages start here
 @app.route("/patient")
 @login_required(role="patient")
 def patient_dashboard():
@@ -427,10 +398,6 @@ def set_theme():
     return redirect(request.referrer or url_for("patient_dashboard"))
 
 
-# ---------------------------------------------------------------------------
-# Patient: private wellness-engagement tracker (never a leaderboard)
-# ---------------------------------------------------------------------------
-
 @app.route("/patient/engagement")
 @login_required(role="patient")
 def engagement():
@@ -458,10 +425,6 @@ def engagement():
         "engagement.html", points=points, current_streak=streak, best_streak=best_streak, history=history,
     )
 
-
-# ---------------------------------------------------------------------------
-# Patient: personal analytics (own records only)
-# ---------------------------------------------------------------------------
 
 @app.route("/patient/analytics")
 @login_required(role="patient")

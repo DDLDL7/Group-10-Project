@@ -1,4 +1,4 @@
-"""HealthTask: a clinician-created administrative task assigned to one patient."""
+# a task a clinician gives to one patient
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -19,7 +19,7 @@ class HealthTask:
         self.task_id = task_id or uuid.uuid4().hex[:10]
         self.title = title.strip()
         self.description = description or ""
-        self.due_date = due_date  # 'YYYY-MM-DD'
+        self.due_date = due_date  # like 2026-09-01
         self.clinic_id = str(clinic_id)
         self.patient_id = str(patient_id)
         self.created_at = datetime.now().isoformat()

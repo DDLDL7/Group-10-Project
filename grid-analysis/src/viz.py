@@ -1,13 +1,4 @@
-"""Advanced visualizations (Week 3 / Part A Task 3.2).
-
-Scoped to a genuinely useful subset of the full visualization-type list
-(network graphs and the geographic map are already covered by
-src/network.py and src/geo.py): a chord-style inter-region flow diagram,
-line-density and maintenance heatmaps, an animated commissioning-year map,
-and a utility comparison chart. No extra third-party charting libraries are
-introduced - everything is built from matplotlib/plotly, already in
-requirements.txt.
-"""
+# extra charts, chord diagram, heatmaps, animated map
 import math
 
 import matplotlib.pyplot as plt
@@ -19,17 +10,11 @@ from matplotlib.path import Path as MplPath
 
 
 def inter_region_flow_matrix(merged):
-    """Line counts between every pair of (source region, destination
-    region) - the underlying data for the chord diagram.
-    """
     return pd.crosstab(merged["Source Region"], merged["Destination Region"])
 
 
 def build_chord_diagram(merged, ax=None):
-    """A lightweight chord diagram (no extra dependency) showing line flow
-    between regions: one arc per region pair, on a circle of region nodes,
-    with arc width proportional to line count.
-    """
+    # draws curved lines between regions that connect a lot
     flow = inter_region_flow_matrix(merged)
     regions = sorted(set(flow.index) | set(flow.columns))
     n = len(regions)
@@ -70,7 +55,6 @@ def build_chord_diagram(merged, ax=None):
 
 
 def build_line_density_heatmap(merged, ax=None):
-    """Heatmap of line counts by source region x voltage tier."""
     table = pd.crosstab(merged["Source Region"], merged["Voltage (kV)"])
     if ax is None:
         _, ax = plt.subplots(figsize=(8, 6))
@@ -86,7 +70,6 @@ def build_line_density_heatmap(merged, ax=None):
 
 
 def build_maintenance_heatmap(merged, ax=None):
-    """Heatmap of 'Under Maintenance' rate by region x utility."""
     table = (
         merged.groupby(["Source Region", "Utility Alias"])["Status"]
         .apply(lambda s: (s == "Under Maintenance").mean())
@@ -105,9 +88,7 @@ def build_maintenance_heatmap(merged, ax=None):
 
 
 def build_animated_commissioning_map(substations):
-    """Plotly scatter_geo map animated by commissioning decade, showing
-    cumulative grid growth over time.
-    """
+    # map that plays through decades showing grid growth
     df = substations.copy()
     df["decade"] = (df["Commissioning Year"] // 10 * 10).astype(int)
     frames = []
@@ -127,9 +108,6 @@ def build_animated_commissioning_map(substations):
 
 
 def build_utility_comparison_chart(merged, ax=None):
-    """Grouped bar chart comparing utilities by line count and total
-    capacity operated.
-    """
     summary = merged.groupby("Utility Alias").agg(
         line_count=("Line ID", "count"),
         total_capacity_mva=("Capacity (MVA)", "sum"),

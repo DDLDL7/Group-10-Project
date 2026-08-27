@@ -17,8 +17,7 @@ from src.geo import (
 
 
 def _four_substation_frames():
-    """A/B are ~a few hundred metres apart; C/D are ~a few hundred metres
-    apart but far from A/B - two clear geographic clusters."""
+    # a and b are close together, c and d are close together, but far apart from each other
     substations = pd.DataFrame([
         {"Substation ID": 1, "Name": "A", "Region": "North", "Country": "Ghana",
          "Latitude": 5.000, "Longitude": 0.000, "Voltage (kV)": 33, "Capacity (MVA)": 50.0,
@@ -62,8 +61,7 @@ def test_verify_line_distances_reports_expected_difference():
     c = substations.set_index("Substation ID").loc[3]
     true_distance = geodesic((a["Latitude"], a["Longitude"]), (c["Latitude"], c["Longitude"])).km
 
-    # line 3's recorded length (556.0) should differ from the true geodesic
-    # distance by roughly the amount we deliberately set it off by
+    # line 3's length was set wrong on purpose to test this
     result = verify_line_distances(substations, lines)
     row = result.loc[result["Line ID"] == 3].iloc[0]
 
@@ -91,7 +89,7 @@ def test_find_geographic_clusters_groups_nearby_substations():
 
     assert len(clusters) == 2
     assert sorted(len(c) for c in clusters) == [2, 2]
-    # A and B must share a cluster; C and D must share a (different) cluster
+    # a and b should be one cluster, c and d another
     a_cluster = result.loc[result["Substation ID"] == 1, "geo_cluster"].iloc[0]
     b_cluster = result.loc[result["Substation ID"] == 2, "geo_cluster"].iloc[0]
     c_cluster = result.loc[result["Substation ID"] == 3, "geo_cluster"].iloc[0]
@@ -103,7 +101,7 @@ def test_regional_connectivity_counts_cross_region_lines():
     utilities, substations, lines = _four_substation_frames()
     summary = regional_connectivity(substations, lines)
 
-    # lines 1 and 2 are within North/South respectively; line 3 crosses North->South
+    # lines 1 and 2 stay in one region, line 3 crosses over
     assert summary["intra_regional_lines"] == 2
     assert summary["cross_regional_lines"] == 1
     assert set(summary["density_by_region"]["Region"]) == {"North", "South"}
@@ -137,7 +135,7 @@ def test_build_plotly_substation_map_plots_every_substation_colored_by_region():
     fig = build_plotly_substation_map(substations, color_by="Region")
 
     assert isinstance(fig, go.Figure)
-    # one trace per distinct region value (North, South)
+    # one line per region
     assert len(fig.data) == substations["Region"].nunique()
     total_points_plotted = sum(len(trace.lat) for trace in fig.data)
     assert total_points_plotted == len(substations)

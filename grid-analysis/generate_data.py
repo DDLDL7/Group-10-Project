@@ -1,13 +1,4 @@
-"""
-Synthetic dataset generator for the National Electricity Grid Network Analysis project.
-Produces three CSVs in the same spirit as the OpenFlights airlines/airports/routes trio:
-    utilities.csv    (like airlines.csv)
-    substations.csv  (like airports.csv)
-    lines.csv        (like routes.csv)
- 
-Grounded in Ghana's grid (ECG, NEDCo, GRIDCo, VRA) with cross-border interconnections
-reflecting the real West African Power Pool (WAPP).
-"""
+# makes fake grid data, same numbers every time because of the seed
 import csv
 import math
 import random
@@ -17,11 +8,7 @@ random.seed(42)
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
  
-# ---------------------------------------------------------------------------
-# Utilities (analogous to airlines.csv)
-# ---------------------------------------------------------------------------
 utilities = [
-    # utility_id, name, alias, code, type, country, active
     (1, "Electricity Company of Ghana", "ECG", "ECG", "Distribution", "Ghana", "Y"),
     (2, "Northern Electricity Distribution Company", "NEDCo", "NED", "Distribution", "Ghana", "Y"),
     (3, "Ghana Grid Company", "GRIDCo", "GRD", "Transmission", "Ghana", "Y"),
@@ -34,9 +21,6 @@ utilities = [
     (10, "Enclave Power Company", "EPC", "EPC", "Generation", "Ghana", "N"),
 ]
  
-# ---------------------------------------------------------------------------
-# Substations (analogous to airports.csv) — coordinates are approximate/illustrative
-# ---------------------------------------------------------------------------
 ghana_regions = {
     "Greater Accra": [("Achimota", 5.614, -0.224), ("Tema", 5.669, -0.017),
                        ("Mallam", 5.560, -0.298), ("Legon", 5.650, -0.186),
@@ -100,9 +84,6 @@ for name, country, lat, lon in cross_border:
     name_to_id[name] = sid
     sid += 1
  
-# ---------------------------------------------------------------------------
-# Transmission/Distribution lines (analogous to routes.csv)
-# ---------------------------------------------------------------------------
 def haversine_km(lat1, lon1, lat2, lon2):
     r = 6371.0
     p1, p2 = math.radians(lat1), math.radians(lat2)
@@ -117,7 +98,7 @@ lines = []
 lid = 1
 seen_pairs = set()
  
-# Connect substations within each region into a loosely meshed network
+# connect substations in the same region
 for region, places in ghana_regions.items():
     ids_in_region = [name_to_id[n] for n, _, _ in places]
     for i, a in enumerate(ids_in_region):
@@ -140,7 +121,7 @@ for region, places in ghana_regions.items():
                 ])
                 lid += 1
  
-# A handful of inter-regional backbone lines (transmission-level, GRIDCo)
+# a few big lines connecting different regions
 region_hub = {r: name_to_id[places[0][0]] for r, places in ghana_regions.items()}
 region_names = list(region_hub.keys())
 for i in range(len(region_names) - 1):
@@ -154,7 +135,7 @@ for i in range(len(region_names) - 1):
     ])
     lid += 1
  
-# Cross-border interconnections (WAPP-style)
+# lines connecting to other countries
 border_links = [
     ("Bolgatanga", "Bolgatanga Interconnection", 9),
     ("Bolgatanga Interconnection", "Bobo-Dioulasso Hub", 9),
@@ -176,9 +157,6 @@ for src_name, dst_name, utility_id in border_links:
     ])
     lid += 1
  
-# ---------------------------------------------------------------------------
-# Write CSVs
-# ---------------------------------------------------------------------------
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 with open(DATA_DIR / "utilities.csv", "w", newline="") as f:

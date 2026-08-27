@@ -1,4 +1,4 @@
-"""Initialize the GridCare-Lite SQLite database from schema.sql."""
+# sets up the database tables
 import sqlite3
 from pathlib import Path
 

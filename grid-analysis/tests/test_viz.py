@@ -51,7 +51,7 @@ def test_build_line_density_heatmap_returns_figure_with_expected_shape():
     fig = build_line_density_heatmap(_merged_frame())
     ax = fig.axes[0]
     assert isinstance(fig, matplotlib.figure.Figure)
-    # one row per source region (North, South), one column per voltage (33, 161)
+    # one row per region, one column per voltage
     assert len(ax.get_yticklabels()) == 2
     assert len(ax.get_xticklabels()) == 2
 
@@ -64,7 +64,7 @@ def test_build_maintenance_heatmap_returns_figure():
 def test_build_animated_commissioning_map_has_one_frame_per_decade():
     fig = build_animated_commissioning_map(_substations_frame())
     assert isinstance(fig, go.Figure)
-    # substations are from the 1980s and 2010s -> 2 distinct decade frames
+    # two different decades here
     assert len(fig.frames) == 2
 
 

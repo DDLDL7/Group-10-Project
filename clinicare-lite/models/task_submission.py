@@ -1,10 +1,4 @@
-"""TaskSubmission: a patient's file submitted against one health task, and
-its clinician review outcome.
-
-Review outcomes are strictly categorical (never a numeric score) - see the
-spec's non-negotiable scope boundary against anything resembling a health
-score or diagnosis.
-"""
+# a file a patient submits for a task, plus the clinician's review of it
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -76,8 +70,7 @@ class TaskSubmission:
 
     @staticmethod
     def for_patients(patient_ids, path=None):
-        """All submissions from a set of patients - used by a clinician
-        viewing every patient registered at their clinic."""
+        # gets submissions for a bunch of patients at once
         path = path or TASK_SUBMISSIONS_PATH
         patient_ids = {str(p) for p in patient_ids}
         return [

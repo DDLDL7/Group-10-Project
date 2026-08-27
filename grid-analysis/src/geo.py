@@ -1,10 +1,4 @@
-"""Geographic and geospatial analysis (Week 2 / Part A Task 2.2).
-
-Builds the interactive Folium map, verifies line distances with an
-independent geodesic calculation, categorizes lines by length, finds
-proximity-based geographic clusters of substations, and summarizes regional
-/ cross-border connectivity density.
-"""
+# maps and location based stuff
 import folium
 import networkx as nx
 import pandas as pd
@@ -31,10 +25,7 @@ def _color_for_voltage(voltage):
 
 
 def build_folium_map(substations, lines, utilities=None, center=(7.9, -1.0), zoom_start=6):
-    """Build a Folium map with a voltage-tier layer for every substation/line,
-    plus (if `utilities` is given) one additional layer per utility showing
-    that utility's own line network - 'Utility Territory' from Task 2.2.
-    """
+    # builds the interactive map with substations and lines on it
     m = folium.Map(location=list(center), zoom_start=zoom_start, tiles="cartodbpositron")
     sub_lookup = substations.set_index("Substation ID")
 
@@ -93,10 +84,7 @@ def build_folium_map(substations, lines, utilities=None, center=(7.9, -1.0), zoo
 
 
 def verify_line_distances(substations, lines):
-    """Independently recompute each line's length using geopy's geodesic
-    formula (more accurate than the haversine approximation used by the
-    generator) and compare it to the recorded `Length (km)`.
-    """
+    # double checks line lengths using real distance math
     sub_lookup = substations.set_index("Substation ID")
     recomputed = []
     for _, row in lines.iterrows():
@@ -117,9 +105,7 @@ def verify_line_distances(substations, lines):
 
 
 def categorize_line_distances(lines, short_max_km=20, long_min_km=100):
-    """Bucket lines into Short / Medium / Long transmission runs (Task 2.2's
-    'Distance Analysis'), and cross-tabulate against voltage tier.
-    """
+    # sorts lines into short, medium, or long
     df = lines.copy()
 
     def bucket(km):
@@ -136,12 +122,7 @@ def categorize_line_distances(lines, short_max_km=20, long_min_km=100):
 
 
 def find_geographic_clusters(substations, radius_km=15):
-    """Group substations into geographic clusters using proximity: any two
-    substations within `radius_km` of each other are linked, and connected
-    components of that proximity graph become clusters ('Substation
-    Clustering' from Task 2.2). Returns substations with an added
-    'geo_cluster' column.
-    """
+    # groups substations that are close to each other
     G = nx.Graph()
     G.add_nodes_from(substations["Substation ID"])
 
@@ -165,9 +146,6 @@ def find_geographic_clusters(substations, radius_km=15):
 
 
 def regional_connectivity(substations, lines):
-    """Substation density per region, plus intra-regional vs cross-region /
-    cross-border line counts - Task 2.2's 'Regional Connectivity' analysis.
-    """
     density = substations.groupby("Region").agg(
         substation_count=("Substation ID", "count"),
         total_capacity_mva=("Capacity (MVA)", "sum"),
@@ -186,11 +164,7 @@ def regional_connectivity(substations, lines):
 
 
 def geographic_gaps(substations):
-    """Regions with below-median substation density (Task 2.2's 'Geographic
-    Gaps'). This is an explicit PROXY: without real population or land-area
-    data, substation count relative to other regions is the only available
-    signal for "possibly underserved".
-    """
+    # regions with fewer substations than most others, maybe underserved
     by_region = substations.groupby("Region").agg(
         substation_count=("Substation ID", "count"),
     ).reset_index()
@@ -200,12 +174,6 @@ def geographic_gaps(substations):
 
 
 def build_plotly_substation_map(substations, color_by="Region"):
-    """Interactive Plotly scatter-geo map of substations (Part B Task 5),
-    a lighter-weight complement to `build_folium_map`'s fuller Leaflet map -
-    useful for quick exploration inside a notebook without the layer
-    controls. `color_by` can be any substation column, e.g. 'Region' or
-    'Voltage (kV)'.
-    """
     fig = px.scatter_geo(
         substations, lat="Latitude", lon="Longitude", hover_name="Name",
         color=substations[color_by].astype(str), title="National Grid Substation Locations",

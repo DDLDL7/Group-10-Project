@@ -66,10 +66,10 @@ def test_capacity_utilization_flags_identifies_extremes():
     lines = _lines_frame()
     sub_flags, line_flags = capacity_utilization_flags(substations, lines)
 
-    # substation 1 (10.0 MVA, 33kV tier) should be flagged low relative to peers 2 and 3
+    # substation 1 has low capacity, should be flagged
     assert sub_flags.loc[sub_flags["Substation ID"] == 1, "capacity_flag"].iloc[0] == \
         "Low capacity (upgrade candidate)"
-    # substation 3 (400.0 MVA, same tier) should be flagged high
+    # substation 3 has high capacity, should be flagged
     assert sub_flags.loc[sub_flags["Substation ID"] == 3, "capacity_flag"].iloc[0] == "High capacity"
 
 
@@ -79,7 +79,7 @@ def test_line_maintenance_proportion_by_region_and_utility():
 
     north_rate = by_region.loc[by_region["Source Region"] == "North", "under_maintenance_rate"].iloc[0]
     south_rate = by_region.loc[by_region["Source Region"] == "South", "under_maintenance_rate"].iloc[0]
-    assert north_rate == 0.5  # 1 of 2 North lines under maintenance
+    assert north_rate == 0.5  # one of two lines is under maintenance
     assert south_rate == 0.0
 
     u1_rate = by_utility.loc[by_utility["Utility Alias"] == "U1", "under_maintenance_rate"].iloc[0]
@@ -96,14 +96,14 @@ def test_asset_age_profile_buckets_by_decade():
     assert row_1970s["active_rate"] == 1.0
 
     row_2020s = profile.loc[profile["decade"] == "2020s"].iloc[0]
-    assert row_2020s["active_rate"] == 0.0  # substation 3 is Inactive
+    assert row_2020s["active_rate"] == 0.0  # substation 3 is inactive
 
 
 def test_capacity_concentration_reports_top_share():
     substations = _substations_frame()
     result = capacity_concentration(substations, top_fraction=0.25)
 
-    # top 25% of 4 substations = 1 substation = the 400.0 MVA one
+    # top 25% here is just the one biggest substation
     total = substations["Capacity (MVA)"].sum()
     assert result["num_substations_in_top_fraction"] == 1
     assert result["share_of_total_capacity"] == round(400.0 / total, 4)
@@ -113,9 +113,7 @@ def test_growth_opportunities_flags_low_density_low_capacity_regions():
     substations = _substations_frame()
     result = growth_opportunities(substations)
 
-    # North has 3 substations / 460 MVA total; South has 1 substation / 60 MVA.
-    # South's count (1) is below median but its capacity (60) is also below
-    # median (260), so South should be flagged as a growth opportunity.
+    # south has fewer substations and less capacity, should get flagged
     south_row = result.loc[result["Region"] == "South"].iloc[0]
     assert bool(south_row["growth_opportunity"]) is True
 
@@ -125,9 +123,7 @@ def test_reliability_proxy_ranks_older_maintenance_affected_substations_higher()
     merged = _merged_frame()
     result = reliability_proxy(substations, merged)
 
-    # Substation 1 (oldest, 1970, has a line under maintenance) should score
-    # at or near the top; substation 4 (2010, no maintenance issues, not in
-    # the merged frame at all) should score low.
+    # substation 1 is old and under maintenance, so it scores high
     top_id = result.iloc[0]["Substation ID"]
     assert top_id == 1
     sub1_score = result.loc[result["Substation ID"] == 1, "reliability_risk_score"].iloc[0]

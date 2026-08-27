@@ -1,11 +1,4 @@
-"""Message: direct patient<->clinician messages, and clinic-wide announcements.
-
-A message with recipient_id=None and is_announcement=True is a clinic-wide
-announcement. Everything else is a direct message between exactly two
-users - Message.conversation() only ever returns messages exchanged
-between the two specified users, so one patient can never see another
-patient's conversation.
-"""
+# a direct message, or an announcement if recipient_id is empty
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -48,8 +41,7 @@ class Message:
 
     @staticmethod
     def inbox_for(user_id, path=None):
-        """Direct messages addressed to user_id, plus every clinic-wide
-        announcement - never another user's direct conversation."""
+        # messages sent to this user, plus all announcements
         path = path or MESSAGES_PATH
         results = [
             {"message_id": mid, **r} for mid, r in load_json(path).items()

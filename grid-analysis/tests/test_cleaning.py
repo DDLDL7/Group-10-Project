@@ -51,7 +51,7 @@ def test_numeric_coercion_and_failure_reporting():
 
     assert pd.api.types.is_float_dtype(clean_subs["Latitude"])
     assert pd.api.types.is_float_dtype(clean_lines["Length (km)"])
-    # "not_a_number" must coerce to NaN, not raise
+    # bad values just become nan, no crash
     assert clean_subs.loc[clean_subs["Substation ID"] == 2, "Capacity (MVA)"].isnull().all()
     assert report["numeric_coercion_failures"]["substations"]["Capacity (MVA)"] == 1
 
@@ -93,7 +93,7 @@ def test_utility_region_line_counts_groups_and_sorts_correctly():
     ])
     counts = utility_region_line_counts(merged)
 
-    # busiest combination (ECG / Greater Accra, count 2) must come first
+    # the busiest combo should be first
     top = counts.iloc[0]
     assert top["Utility Code"] == "ECG"
     assert top["Source Region"] == "Greater Accra"

@@ -1,11 +1,3 @@
-"""Input validation: user IDs, passwords, and structural form-completeness
-checks for .csv/.txt submissions.
-
-The form-completeness check is deliberately limited to checking that
-expected fields exist and are the right basic type - it must never
-interpret the clinical/medical meaning of a value. See
-clinicare-lite/README.md's scope-boundary note.
-"""
 import csv
 import io
 import re
@@ -17,8 +9,7 @@ MAX_PATIENT_YEAR = 2028
 
 
 def validate_id(user_id, role):
-    """Clinician IDs: 8 digits ending in '0000'. Patient IDs: 8 digits
-    ending in a registration year between 2022 and 2028."""
+    # clinician id ends in 0000, patient id ends in a year
     if not ID_PATTERN.match(str(user_id)):
         return False
 
@@ -35,8 +26,7 @@ def validate_id(user_id, role):
 
 
 def validate_password(password):
-    """At least 8 characters, one uppercase, one lowercase, one digit, one
-    special character."""
+    # needs 8+ chars, upper, lower, digit, and a special char
     if len(password) < 8:
         return False
     return bool(
@@ -47,20 +37,12 @@ def validate_password(password):
     )
 
 
-# ---------------------------------------------------------------------------
-# Automated form-completeness check (structural only - see scope boundary)
-# ---------------------------------------------------------------------------
-
 EXPECTED_HEALTH_TASK_COLUMNS = {"date", "value"}
 
 
 def check_form_completeness(file_bytes, filename, expected_columns=None, date_column="date",
                              numeric_column="value"):
-    """Check a submitted .csv/.txt for missing/empty required fields and
-    basic type mismatches. Returns a list of issue strings (empty list =
-    no issues found). Never inspects what the values *mean* medically -
-    only whether the expected shape is present.
-    """
+    # just checks the file has the right columns/fields, not what they mean
     expected_columns = expected_columns or EXPECTED_HEALTH_TASK_COLUMNS
     issues = []
 
@@ -74,7 +56,7 @@ def check_form_completeness(file_bytes, filename, expected_columns=None, date_co
     missing_columns = expected_columns - fieldnames
     if missing_columns:
         issues.append(f"Missing expected column(s): {', '.join(sorted(missing_columns))}.")
-        return issues  # can't check row-level issues without the columns
+        return issues
 
     rows = list(reader)
     if not rows:

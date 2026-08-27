@@ -76,8 +76,7 @@ def test_check_form_completeness_flags_non_numeric_value():
 
 
 def test_check_form_completeness_never_interprets_medical_meaning():
-    """A dangerously high number is still just 'a number' - the checker
-    must not comment on whether the value itself is concerning."""
+    # a big scary number is still just a number to this checker
     content = b"date,value\n2026-08-01,999999\n"
     issues = check_form_completeness(content, "readings.csv")
     assert issues == []

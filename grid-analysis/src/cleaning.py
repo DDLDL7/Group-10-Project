@@ -1,19 +1,10 @@
-"""Loading, cleaning, validation, and merging for the grid-analysis datasets.
-
-Implements Week 1 / Part A Task 1.1 (Data Cleaning and Preprocessing) and
-Task 1.3 (Data Integration and Relationship Mapping). Ports and extends the
-ad-hoc checks that used to live in "examined data.py" into reusable
-functions shared by the notebook and the tests.
-"""
+# loads, cleans, and merges the grid csv files
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-# Approximate West African bounding box (covers Ghana and the WAPP
-# cross-border points used in generate_data.py: Guinea, Burkina Faso,
-# Cote d'Ivoire, Togo, Benin, Nigeria).
-LAT_BOUNDS = (4.0, 15.0)
+LAT_BOUNDS = (4.0, 15.0)  # rough west africa box
 LON_BOUNDS = (-16.0, 5.0)
 
 NUMERIC_SUBSTATION_COLS = ["Latitude", "Longitude", "Voltage (kV)", "Capacity (MVA)",
@@ -22,7 +13,6 @@ NUMERIC_LINE_COLS = ["Voltage (kV)", "Length (km)", "Capacity (MVA)"]
 
 
 def load_raw(data_dir):
-    """Load the three raw CSVs from data_dir into DataFrames."""
     data_dir = Path(data_dir)
     utilities = pd.read_csv(data_dir / "utilities.csv")
     substations = pd.read_csv(data_dir / "substations.csv")
@@ -31,26 +21,19 @@ def load_raw(data_dir):
 
 
 def clean_and_validate(utilities, substations, lines):
-    """Clean the three DataFrames and validate cross-table relationships.
-
-    Returns (utilities, substations, lines, report) where the returned
-    frames are cleaned copies and report is a dict summarizing every
-    issue found (and fixed, where fixable).
-    """
+    # fixes numbers, drops duplicates, checks ids match up
     report = {}
 
     utilities = utilities.copy()
     substations = substations.copy()
     lines = lines.copy()
 
-    # --- missing values -----------------------------------------------
     report["missing_values"] = {
         "utilities": utilities.isnull().sum().to_dict(),
         "substations": substations.isnull().sum().to_dict(),
         "lines": lines.isnull().sum().to_dict(),
     }
 
-    # --- numeric coercion ------------------------------------------------
     for col in NUMERIC_SUBSTATION_COLS:
         substations[col] = pd.to_numeric(substations[col], errors="coerce")
     for col in NUMERIC_LINE_COLS:
@@ -62,7 +45,6 @@ def clean_and_validate(utilities, substations, lines):
     }
     report["numeric_coercion_failures"] = coercion_failures
 
-    # --- duplicates -------------------------------------------------------
     report["duplicates_found"] = {
         "utilities": int(utilities.duplicated().sum()),
         "substations": int(substations.duplicated().sum()),
@@ -72,14 +54,12 @@ def clean_and_validate(utilities, substations, lines):
     substations = substations.drop_duplicates().reset_index(drop=True)
     lines = lines.drop_duplicates().reset_index(drop=True)
 
-    # --- coordinate range validation ---------------------------------------
     lat_ok = substations["Latitude"].between(*LAT_BOUNDS)
     lon_ok = substations["Longitude"].between(*LON_BOUNDS)
     bad_coords = substations[~(lat_ok & lon_ok)]
     report["invalid_coordinates"] = int(len(bad_coords))
     report["invalid_coordinate_substation_ids"] = bad_coords["Substation ID"].tolist()
 
-    # --- relational integrity ----------------------------------------------
     valid_substation_ids = set(substations["Substation ID"])
     valid_utility_ids = set(utilities["Utility ID"])
 
@@ -97,11 +77,7 @@ def clean_and_validate(utilities, substations, lines):
 
 
 def merge_all(utilities, substations, lines):
-    """Merge the three tables into one integrated, denormalized DataFrame.
-
-    Each row is a line, enriched with its source/destination substation
-    details (name, region, country) and its operating utility's name/code.
-    """
+    # joins the three tables into one big table
     sub_cols = ["Substation ID", "Name", "Region", "Country"]
 
     merged = lines.merge(
@@ -126,10 +102,7 @@ def merge_all(utilities, substations, lines):
 
 
 def utility_region_line_counts(merged):
-    """Line counts per utility per source region (Part B Task 4's 'Analyse
-    lines by utility and source region'), sorted with the busiest
-    utility/region combinations first.
-    """
+    # counts lines per utility per region
     return (
         merged.groupby(["Utility Code", "Source Region"])
         .size()

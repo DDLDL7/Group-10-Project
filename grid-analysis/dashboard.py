@@ -1,12 +1,4 @@
-"""Streamlit dashboard for the National Electricity Grid Network Analysis
-(Week 3 / Part A Task 3.1).
-
-Run with: streamlit run dashboard.py  (from inside grid-analysis/)
-
-All computation is delegated to src/ so the dashboard, the notebooks, and
-the tests share one implementation - nothing here is recomputed with new
-logic.
-"""
+# the interactive dashboard, run with: streamlit run dashboard.py
 from pathlib import Path
 
 import streamlit as st
@@ -74,7 +66,6 @@ overview_tab, network_tab, geography_tab, reliability_tab, search_tab = st.tabs(
     ["Overview", "Network", "Geography", "Reliability", "Search"]
 )
 
-# --------------------------------------------------------------------------
 with overview_tab:
     st.subheader("Executive summary")
     c1, c2, c3, c4 = st.columns(4)
@@ -94,7 +85,6 @@ with overview_tab:
     with st.expander("Data cleaning report"):
         st.json(cleaning_report)
 
-# --------------------------------------------------------------------------
 with network_tab:
     st.subheader("Centrality measures")
     st.dataframe(centrality.loc[filtered_substations["Substation ID"]], width="stretch")
@@ -133,7 +123,6 @@ with network_tab:
                 "the remaining substations stay connected through alternate paths."
             )
 
-# --------------------------------------------------------------------------
 with geography_tab:
     st.subheader("Substation and line map")
     grid_map = build_folium_map(filtered_substations, lines, utilities=utilities)
@@ -153,7 +142,6 @@ with geography_tab:
     _, distance_counts, distance_by_voltage = categorize_line_distances(lines)
     st.bar_chart(distance_counts)
 
-# --------------------------------------------------------------------------
 with reliability_tab:
     st.subheader("Utility footprint")
     footprint_region, footprint_voltage = utility_infrastructure_footprint(filtered_merged)
@@ -182,7 +170,6 @@ with reliability_tab:
     st.subheader("Reliability risk proxy (age + maintenance + centrality)")
     st.dataframe(reliability_proxy(substations, merged, centrality=centrality).head(10), width="stretch")
 
-# --------------------------------------------------------------------------
 with search_tab:
     st.subheader("Substation lookup")
     query = st.text_input("Search by substation name or ID")

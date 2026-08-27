@@ -1,4 +1,4 @@
-"""Clinic: which clinician runs it, and which patients are registered."""
+# a clinic has one clinician and a list of patients
 from pathlib import Path
 
 from utils.json_store import load_json, save_json

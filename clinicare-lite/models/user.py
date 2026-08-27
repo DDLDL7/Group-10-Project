@@ -1,4 +1,4 @@
-"""User: clinicians and patients, with bcrypt-hashed passwords."""
+# a clinician or patient, password is hashed not stored plain
 from pathlib import Path
 
 import bcrypt
@@ -60,7 +60,7 @@ class User:
 
     @staticmethod
     def authenticate(user_id, password, path=None):
-        """Return the user record (without password_hash) on success, else None."""
+        # checks login, returns user info without the password
         record = User.get(user_id, path=path)
         if record is None:
             return None

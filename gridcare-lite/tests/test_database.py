@@ -11,9 +11,7 @@ from data_model import Database, DEFAULT_USERS
 
 @pytest.fixture
 def db(tmp_path):
-    """A fresh Database backed by a temp SQLite file (not :memory: - each
-    Database.connect() call opens a new connection, and separate
-    connections to :memory: don't share state)."""
+    # a fresh test database, using a real file not :memory:
     return Database(database_name=str(tmp_path / "gridcare_test.db"))
 
 
@@ -191,10 +189,7 @@ def test_get_reports_counts_open_and_resolved_outages(db):
 
 
 def test_full_outage_to_resolution_workflow(db):
-    """Mirrors the spec's required end-to-end demonstration sequence:
-    engineer reports -> admin assigns -> technician completes -> customer
-    service links a complaint.
-    """
+    # reports it, assigns it, fixes it, then logs a complaint about it
     _add_substation(db, substation_id=1, name="Achimota Substation", region="Greater Accra")
 
     engineer_id = db.verify_login("engineer", "engineer123")[0]

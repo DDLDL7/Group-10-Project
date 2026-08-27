@@ -7,9 +7,7 @@ import models.task_submission as submission_mod
 
 
 def test_full_registration_task_submission_review_workflow(client):
-    """The spec's end-to-end demonstration: register a clinic + patient,
-    assign a task, submit it, review it, and confirm the patient sees the
-    categorical outcome."""
+    # signs up, makes a task, submits it, then reviews it
     assert register(client, "clinician", "11110000", "Ada Osei", "ada@clinic.test", "Str0ng!Pass").status_code == 302
     assert register(client, "patient", "22222026", "Kwame Mensah", "kwame@test.com", "P@tient1x", "11110000").status_code == 302
 

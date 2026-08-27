@@ -1,8 +1,7 @@
-"""Secure handling of patient health-task submission files."""
 from pathlib import Path
 
 ALLOWED_EXTENSIONS = {".txt", ".csv", ".pdf"}
-MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 mb max
 
 SUBMISSIONS_ROOT = Path(__file__).resolve().parent.parent / "submissions"
 
@@ -12,7 +11,7 @@ class FileValidationError(ValueError):
 
 
 def validate_file(filename, file_bytes):
-    """Raise FileValidationError if the file fails type/size checks."""
+    # checks the file type and size are ok
     extension = Path(filename).suffix.lower()
     if extension not in ALLOWED_EXTENSIONS:
         raise FileValidationError(
@@ -28,12 +27,7 @@ def validate_file(filename, file_bytes):
 
 
 def build_storage_path(clinic_id, patient_id, task_id, extension, root=None):
-    """patientID_taskID.extension, under submissions/<clinicID>/<patientID>/.
-
-    clinic_id/patient_id/task_id are all system-generated IDs (not raw
-    user input placed into a path), but we still guard against path
-    traversal defensively rather than trusting that invariant blindly.
-    """
+    # builds a safe file path, blocks weird stuff like "../"
     root = Path(root) if root is not None else SUBMISSIONS_ROOT
 
     def _safe_segment(value):
@@ -52,8 +46,7 @@ def build_storage_path(clinic_id, patient_id, task_id, extension, root=None):
 
 
 def save_submission_file(clinic_id, patient_id, task_id, filename, file_bytes, root=None):
-    """Validate, then write the submission to its patient/clinic directory.
-    Returns the path the file was saved to."""
+    # checks the file then saves it
     extension = validate_file(filename, file_bytes)
     destination = build_storage_path(clinic_id, patient_id, task_id, extension, root=root)
     destination.write_bytes(file_bytes)

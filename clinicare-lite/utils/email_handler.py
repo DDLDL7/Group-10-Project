@@ -1,16 +1,8 @@
-"""Email notifications via SMTP.
-
-Credentials are read from environment variables (SMTP_HOST, SMTP_PORT,
-SMTP_USERNAME, SMTP_PASSWORD) - never hard-coded into source, per the
-spec. If they aren't configured (e.g. in a dev/test environment with no
-real mail server), send_email() logs the message instead of raising, so
-the rest of the application keeps working without a live SMTP account.
-"""
 import os
 import smtplib
 from email.mime.text import MIMEText
 
-SENT_LOG = []  # populated when SMTP isn't configured - useful for tests/dev
+SENT_LOG = []  # fake emails go here if no smtp setup
 
 
 def _smtp_configured():
@@ -19,8 +11,7 @@ def _smtp_configured():
 
 
 def send_email(recipient_email, subject, body):
-    """Send an email, or log it if SMTP isn't configured. Returns True if
-    an actual send was attempted, False if it was only logged."""
+    # sends a real email, or just logs it if there's no email setup
     if not _smtp_configured():
         SENT_LOG.append({"to": recipient_email, "subject": subject, "body": body})
         return False

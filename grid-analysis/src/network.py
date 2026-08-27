@@ -1,9 +1,4 @@
-"""NetworkX graph construction and network analysis (Week 2 / Part A Task 2.1).
-
-The grid is modelled as an undirected graph: AC power can flow either way
-along a line depending on system conditions, unlike a scheduled flight with
-a fixed origin/destination.
-"""
+# builds the grid as a graph and analyzes it
 import networkx as nx
 import pandas as pd
 
@@ -26,7 +21,7 @@ EDGE_ATTR_COLS = {
 
 
 def build_graph(substations, lines):
-    """Build an undirected graph: nodes = substations (keyed by Substation ID), edges = lines."""
+    # substations become nodes, lines become edges
     G = nx.Graph()
 
     for _, row in substations.iterrows():
@@ -44,10 +39,7 @@ def build_graph(substations, lines):
 
 
 def compute_centrality(G):
-    """Return a DataFrame of per-substation centrality measures, indexed by Substation ID.
-
-    Covers Task 2.1's 'Critical Substation Analysis' and 'Centrality Analysis'.
-    """
+    # figures out which substations matter most, a few different ways
     degree = nx.degree_centrality(G)
     betweenness = nx.betweenness_centrality(G)
     closeness = nx.closeness_centrality(G)
@@ -68,45 +60,26 @@ def compute_centrality(G):
 
 
 def get_connected_components(G):
-    """Return connected components as a list of node-id sets, largest first."""
     return sorted(nx.connected_components(G), key=len, reverse=True)
 
 
 def largest_component_subgraph(G):
-    """Return the induced subgraph of the largest connected component.
-
-    Diameter and average shortest path length are only defined for a
-    connected graph, so these metrics are computed on the largest piece
-    when the network isn't fully connected.
-    """
+    # some stats only make sense on one connected piece
     largest = get_connected_components(G)[0]
     return G.subgraph(largest).copy()
 
 
 def detect_communities(G):
-    """Greedy modularity-based community detection (Task 2.1's 'Community Detection').
-
-    Returns a list of node-id sets, one per detected community.
-    """
+    # groups substations that connect a lot to each other
     return [set(c) for c in nx.algorithms.community.greedy_modularity_communities(G)]
 
 
 def find_bridges(G):
-    """Lines whose removal alone would split the network - 'bridge lines' /
-    single points of connection, per Task 2.1's 'Analyse network structure'.
-
-    Returns a list of (substation_id_a, substation_id_b) tuples.
-    """
+    # lines that would split the network if they went down
     return list(nx.bridges(G))
 
 
 def network_summary(G):
-    """High-level structural metrics for the whole network (Task 2.1).
-
-    Diameter, average shortest path length, and global efficiency are
-    computed on the largest connected component when the graph isn't fully
-    connected, since they're undefined (infinite) across separate islands.
-    """
     components = get_connected_components(G)
     largest = largest_component_subgraph(G)
 
@@ -127,11 +100,7 @@ def network_summary(G):
 
 
 def n1_contingency(G, node_id):
-    """Remove node_id from a copy of G and compare connectivity before/after.
-
-    Returns a dict with component counts and component sizes before/after,
-    framed as a structural resilience proxy, not a real power-flow study.
-    """
+    # what happens to the network if this one substation goes down
     if node_id not in G.nodes:
         raise ValueError(f"Node {node_id!r} not found in graph")
 

@@ -12,10 +12,7 @@ from models.task_submission import TaskSubmission
 from models.message import Message
 
 
-# ---------------------------------------------------------------------------
-# User
-# ---------------------------------------------------------------------------
-
+# user tests
 def test_user_rejects_invalid_id():
     with pytest.raises(ValueError, match="Invalid clinician ID"):
         User("12345678", "Dr. Smith", "smith@clinic.test", "Str0ng!Pass", "clinician")
@@ -34,7 +31,7 @@ def test_user_save_and_authenticate(tmp_path):
     authenticated = User.authenticate("12350000", "Str0ng!Pass", path=path)
     assert authenticated is not None
     assert authenticated["name"] == "Dr. Smith"
-    assert "password_hash" not in authenticated  # never leaks the hash
+    assert "password_hash" not in authenticated  # should not leak the hash
 
 
 def test_user_authenticate_fails_with_wrong_password(tmp_path):
@@ -57,10 +54,7 @@ def test_user_set_theme(tmp_path):
     assert User.get("12342024", path=path)["theme"] == "dark"
 
 
-# ---------------------------------------------------------------------------
-# Clinic
-# ---------------------------------------------------------------------------
-
+# clinic tests
 def test_clinic_save_and_add_patient(tmp_path):
     path = tmp_path / "clinics.json"
     Clinic("clinic1", "Downtown Clinic", "12350000").save(path=path)
@@ -79,10 +73,7 @@ def test_clinic_for_clinician_finds_the_right_clinic(tmp_path):
     assert found["clinic_id"] == "clinic2"
 
 
-# ---------------------------------------------------------------------------
-# HealthTask
-# ---------------------------------------------------------------------------
-
+# healthtask tests
 def test_health_task_requires_title_and_due_date():
     with pytest.raises(ValueError, match="title"):
         HealthTask("", "desc", "2026-09-01", "clinic1", "12342024")
@@ -111,10 +102,7 @@ def test_health_task_for_patient_excludes_other_patients_tasks(tmp_path):
     assert tasks[0]["title"] == "Task for A"
 
 
-# ---------------------------------------------------------------------------
-# TaskSubmission
-# ---------------------------------------------------------------------------
-
+# tasksubmission tests
 def test_task_submission_save_defaults_to_pending(tmp_path):
     path = tmp_path / "submissions.json"
     submission_id = TaskSubmission("12342024", "task1", "/some/path.csv").save(path=path)
@@ -163,10 +151,7 @@ def test_task_submission_for_patients_scopes_to_given_ids_only(tmp_path):
     assert {r["patient_id"] for r in results} == {"patientA", "patientB"}
 
 
-# ---------------------------------------------------------------------------
-# Message
-# ---------------------------------------------------------------------------
-
+# message tests
 def test_message_conversation_is_private_between_two_users(tmp_path):
     path = tmp_path / "messages.json"
     Message("patientA", "clinician1", "Hello doctor").save(path=path)
