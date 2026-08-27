@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 
 utilities = pd.read_csv('utilities.csv')
@@ -22,7 +22,6 @@ print(lines.head())
 print("Duplicate rows in utilities:", utilities.duplicated().sum())
 print("Duplicate rows in substations:", substations.duplicated().sum())
 print("Duplicate rows in lines:", lines.duplicated().sum())
-
 
 valid_substation_ids = set(substations['Substation ID'])
 valid_utility_ids = set(utilities['Utility ID'])
