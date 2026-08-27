@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Clinician Dashboard{% endblock %}
+{% block content %}
+<h2>Welcome, Dr. {{ user.name }}</h2>
+<p class="text-muted">{{ clinic.name }} — {{ clinic.patient_ids|length }} registered patient(s)</p>
+
+<div class="row mb-4 g-3">
+  <div class="col-md-3"><div class="card p-3 text-center"><div class="fs-4">{{ tasks|length }}</div><div class="text-muted">Health tasks</div></div></div>
+  <div class="col-md-3"><div class="card p-3 text-center"><div class="fs-4">{{ submissions|length }}</div><div class="text-muted">Submissions</div></div></div>
+  <div class="col-md-3"><div class="card p-3 text-center"><div class="fs-4">{{ pending_count }}</div><div class="text-muted">Pending review</div></div></div>
+  <div class="col-md-3"><div class="card p-3 d-flex align-items-center justify-content-center"><a href="{{ url_for('new_health_task') }}" class="btn btn-success w-100">+ New Task</a></div></div>
+</div>
+
+<h4>Health tasks</h4>
+<div class="table-responsive">
+<table class="table">
+  <thead><tr><th>Title</th><th>Patient</th><th>Due</th></tr></thead>
+  <tbody>
+  {% for task in tasks %}
+    <tr><td>{{ task.title }}</td><td>{{ task.patient_id }}</td><td>{{ task.due_date }}</td></tr>
+  {% else %}
+    <tr><td colspan="3" class="text-muted">No health tasks yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<a href="{{ url_for('clinician_submissions') }}" class="btn btn-outline-primary">View all submissions</a>
+{% endblock %}

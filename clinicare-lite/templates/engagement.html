@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}My Engagement{% endblock %}
+{% block content %}
+<h2>My Wellness Engagement</h2>
+<p class="text-muted">Private to you — this is never compared with other patients.</p>
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><div class="card p-3 text-center"><div class="fs-4">{{ points }}</div><div class="text-muted">Engagement points</div></div></div>
+  <div class="col-md-4"><div class="card p-3 text-center"><div class="fs-4">{{ current_streak }}</div><div class="text-muted">Current on-time streak</div></div></div>
+  <div class="col-md-4"><div class="card p-3 text-center"><div class="fs-4">{{ best_streak }}</div><div class="text-muted">Best streak</div></div></div>
+</div>
+<h4>History</h4>
+<div class="table-responsive">
+<table class="table">
+<thead><tr><th>Task</th><th>Submitted</th><th>On time?</th></tr></thead>
+<tbody>
+{% for h in history %}
+  <tr><td>{{ h.task_title }}</td><td>{{ h.timestamp[:16] }}</td><td>{{ '✅' if h.on_time else '⌛' }}</td></tr>
+{% else %}
+  <tr><td colspan="3" class="text-muted">Nothing submitted yet.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

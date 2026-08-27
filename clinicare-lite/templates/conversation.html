@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Conversation{% endblock %}
+{% block content %}
+<h2>Conversation with {{ other.name }}</h2>
+<div class="alert alert-info">This messaging channel is <strong>not monitored in real time</strong> and must never be used for emergencies.</div>
+<div class="mb-3">
+{% for m in messages %}
+  <div class="mb-2 {{ 'text-end' if m.sender_id == user.user_id }}">
+    <span class="badge {{ 'bg-primary' if m.sender_id == user.user_id else 'bg-secondary' }}">{{ m.content }}</span>
+    <div class="text-muted small">{{ m.timestamp[:16] }}</div>
+  </div>
+{% else %}
+  <p class="text-muted">No messages yet — say hello.</p>
+{% endfor %}
+</div>
+<form method="post">
+  <div class="input-group">
+    <input type="text" name="content" class="form-control" placeholder="Type a non-urgent message..." required>
+    <button type="submit" class="btn btn-primary">Send</button>
+  </div>
+</form>
+{% endblock %}

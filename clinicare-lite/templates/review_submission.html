@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Review Submission{% endblock %}
+{% block content %}
+<h2>Review Submission</h2>
+<p>
+  <strong>Task:</strong> {{ task.title if task else "(deleted task)" }}<br>
+  <strong>Patient:</strong> {{ submission.patient_id }}<br>
+  <strong>Submitted:</strong> {{ submission.timestamp[:16] }}
+</p>
+
+{% if submission.completeness_issues %}
+<div class="alert alert-warning">
+  <strong>Automated completeness check (structural only — not a clinical interpretation):</strong>
+  <ul class="mb-0">{% for issue in submission.completeness_issues %}<li>{{ issue }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form method="post">
+  <div class="mb-3">
+    <label class="form-label">Outcome</label>
+    <select name="outcome" class="form-select" required>
+      {% for outcome in outcomes %}
+      <option value="{{ outcome }}" {{ 'selected' if submission.review_status == outcome }}>{{ outcome }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Notes</label>
+    <textarea name="notes" class="form-control" rows="4">{{ submission.notes or '' }}</textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Save review</button>
+</form>
+{% endblock %}

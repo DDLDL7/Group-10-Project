@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Inbox{% endblock %}
+{% block content %}
+<h2>Inbox</h2>
+<div class="alert alert-info">This messaging channel is <strong>not monitored in real time</strong> and must never be used for emergencies or urgent matters.</div>
+<div class="list-group">
+{% for m in inbox %}
+  {% set other_id = m.sender_id if m.sender_id != user.user_id else m.recipient_id %}
+  <div class="list-group-item">
+    {% if m.is_announcement %}
+      <span class="badge bg-info">Clinic announcement</span>
+    {% else %}
+      <a href="{{ url_for('conversation', other_user_id=other_id) }}">Conversation with {{ other_id }}</a>
+      {% if not m.read and m.recipient_id == user.user_id %}<span class="badge bg-primary">new</span>{% endif %}
+    {% endif %}
+    <div class="text-muted small">{{ m.timestamp[:16] }}</div>
+    <div>{{ m.content }}</div>
+  </div>
+{% else %}
+  <div class="list-group-item text-muted">No messages yet.</div>
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}My Analytics{% endblock %}
+{% block content %}
+<h2>My Analytics</h2>
+<p class="text-muted">Based on your own records only.</p>
+<div class="row g-3">
+  <div class="col-md-3"><div class="card p-3 text-center"><div class="fs-4">{{ analytics.total_tasks }}</div><div class="text-muted">Assigned tasks</div></div></div>
+  <div class="col-md-3"><div class="card p-3 text-center"><div class="fs-4">{{ (analytics.completion_rate * 100)|round(1) }}%</div><div class="text-muted">Completion rate</div></div></div>
+  <div class="col-md-3"><div class="card p-3 text-center"><div class="fs-4">{{ analytics.pending_review_count }}</div><div class="text-muted">Pending review</div></div></div>
+  <div class="col-md-3"><div class="card p-3 text-center"><div class="fs-4">{{ analytics.reviewed_count }}</div><div class="text-muted">Reviewed</div></div></div>
+</div>
+
+<div class="card p-2 mt-4">{{ chart_html|safe }}</div>
+{% endblock %}

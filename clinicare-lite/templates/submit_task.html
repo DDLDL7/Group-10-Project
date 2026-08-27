@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Submit Task{% endblock %}
+{% block content %}
+<h2>{{ task.title }}</h2>
+<p>{{ task.description }}</p>
+<p class="text-muted">Due: {{ task.due_date }}</p>
+<form method="post" enctype="multipart/form-data">
+  <div class="mb-3">
+    <label class="form-label">Upload file (.txt, .csv, or .pdf — max 5 MB)</label>
+    <input type="file" name="file" class="form-control" accept=".txt,.csv,.pdf" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

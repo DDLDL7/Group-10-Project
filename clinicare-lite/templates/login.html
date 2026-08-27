@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Login - ClinicCare-Lite{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5">
+    <h2 class="mb-3">Log in</h2>
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">User ID</label>
+        <input type="text" name="user_id" class="form-control" required autofocus>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Log in</button>
+    </form>
+    <p class="mt-3 text-center"><a href="{{ url_for('register') }}">Need an account? Register</a></p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Submissions{% endblock %}
+{% block content %}
+<h2>Patient Submissions</h2>
+<div class="mb-3 d-flex flex-wrap gap-2">
+  <a href="{{ url_for('clinician_submissions') }}" class="btn btn-sm {{ 'btn-primary' if not active_filter else 'btn-outline-primary' }}">All</a>
+  {% for outcome in outcomes %}
+  <a href="{{ url_for('clinician_submissions', status=outcome) }}" class="btn btn-sm {{ 'btn-primary' if active_filter == outcome else 'btn-outline-primary' }}">{{ outcome }}</a>
+  {% endfor %}
+</div>
+<div class="table-responsive">
+<table class="table">
+  <thead><tr><th>Patient</th><th>Task</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for s in submissions %}
+    <tr>
+      <td>{{ s.patient_id }}</td>
+      <td>{{ s.task_title }}</td>
+      <td>{{ s.timestamp[:16] }}</td>
+      <td><span class="badge bg-secondary">{{ s.review_status }}</span></td>
+      <td class="text-nowrap">
+        <a href="{{ url_for('review_submission', submission_id=s.submission_id) }}" class="btn btn-sm btn-outline-primary">Review</a>
+        <a href="{{ url_for('download_submission', submission_id=s.submission_id) }}" class="btn btn-sm btn-outline-secondary">Download</a>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5" class="text-muted">No submissions.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

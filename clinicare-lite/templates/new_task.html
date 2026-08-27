@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}New Health Task{% endblock %}
+{% block content %}
+<h2>Create Health Task</h2>
+<form method="post">
+  <div class="mb-3">
+    <label class="form-label">Patient</label>
+    <select name="patient_id" class="form-select" required>
+      {% for pid in clinic.patient_ids %}
+      <option value="{{ pid }}">{{ pid }}</option>
+      {% else %}
+      <option disabled>No patients registered at your clinic yet</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Title</label>
+    <input type="text" name="title" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Instructions</label>
+    <textarea name="description" class="form-control" rows="4"></textarea>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Due date</label>
+    <input type="date" name="due_date" class="form-control" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Assign task</button>
+</form>
+{% endblock %}
