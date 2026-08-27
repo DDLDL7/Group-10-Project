@@ -1,19 +1,5 @@
-
-"""GridCare-Lite entry point (PySide6 desktop app)."""
-
-import sys
-from PySide6.QtWidgets import QApplication
-from data_model import LoginWindow
-
-
-def main():
-    app = QApplication(sys.argv)
-
-    window = LoginWindow()
-    window.show()
-
-    sys.exit(app.exec())
-
+"""GridCare-Lite entry point (Tkinter desktop app)."""
+from data_model import main
 
 if __name__ == "__main__":
     main()

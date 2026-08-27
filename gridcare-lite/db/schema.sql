@@ -1,17 +1,25 @@
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('admin', 'engineer', 'technician', 'customer_service'))
 );
 
-CREATE TABLE substations (
+CREATE TABLE IF NOT EXISTS substations (
     substation_id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     region TEXT NOT NULL
 );
 
-CREATE TABLE outages (
+CREATE TABLE IF NOT EXISTS lines (
+    line_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_substation TEXT,
+    destination_substation TEXT,
+    length_km REAL,
+    voltage_kv REAL
+);
+
+CREATE TABLE IF NOT EXISTS outages (
     outage_id INTEGER PRIMARY KEY AUTOINCREMENT,
     substation_id INTEGER NOT NULL,
     reported_by INTEGER NOT NULL,
@@ -24,7 +32,7 @@ CREATE TABLE outages (
     FOREIGN KEY (reported_by) REFERENCES users(user_id)
 );
 
-CREATE TABLE work_orders (
+CREATE TABLE IF NOT EXISTS work_orders (
     work_order_id INTEGER PRIMARY KEY AUTOINCREMENT,
     outage_id INTEGER NOT NULL,
     assigned_technician INTEGER,
@@ -34,12 +42,11 @@ CREATE TABLE work_orders (
     FOREIGN KEY (assigned_technician) REFERENCES users(user_id)
 );
 
-CREATE TABLE complaints (
+CREATE TABLE IF NOT EXISTS complaints (
     complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_name TEXT NOT NULL,
+    description TEXT NOT NULL,
     outage_id INTEGER,
-    logged_by INTEGER NOT NULL,
-    description TEXT,
     logged_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (outage_id) REFERENCES outages(outage_id),
-    FOREIGN KEY (logged_by) REFERENCES users(user_id)
+    FOREIGN KEY (outage_id) REFERENCES outages(outage_id)
 );

@@ -1,14 +1,31 @@
 import sqlite3
 import tkinter as tk
 from tkinter import ttk, messagebox
-import hashlib
+import bcrypt
 import csv
 from datetime import datetime
+from pathlib import Path
+
+
+SCHEMA_PATH = Path(__file__).resolve().parent / "db" / "schema.sql"
+GRID_DATA_DIR = Path(__file__).resolve().parent.parent / "grid-analysis" / "data"
+
+DEFAULT_USERS = [
+    ("admin", "admin123", "admin"),
+    ("engineer", "engineer123", "engineer"),
+    ("technician", "tech123", "technician"),
+    ("customer_service", "service123", "customer_service"),
+]
 
 
 # ============================================================
 # DATABASE CLASS
 # ============================================================
+#
+# All persistence AND business rules (validation, status transitions,
+# referential-integrity checks) live here, not in the Tkinter callbacks -
+# this is what makes the workflow testable with pytest without needing a
+# running GUI (see gridcare-lite/tests/).
 
 class Database:
 
@@ -26,291 +43,334 @@ class Database:
         return conn
 
     # --------------------------------------------------------
-    # Create database tables
+    # Create database tables from db/schema.sql
     # --------------------------------------------------------
 
     def init_db(self):
-
         conn = self.connect()
-        cursor = conn.cursor()
-
-        # Users table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                role TEXT NOT NULL
-            )
-        """)
-
-        # Substations table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS substations (
-                substation_id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                region TEXT NOT NULL
-            )
-        """)
-
-        # Lines table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS lines (
-                line_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                source_substation TEXT,
-                destination_substation TEXT,
-                length_km REAL,
-                voltage_kv REAL
-            )
-        """)
-
-        # Outages table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS outages (
-                outage_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                substation_id INTEGER NOT NULL,
-                reported_by INTEGER NOT NULL,
-                description TEXT,
-                severity TEXT,
-                status TEXT DEFAULT 'Open',
-                reported_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                resolved_at TEXT,
-                FOREIGN KEY (substation_id)
-                    REFERENCES substations(substation_id),
-                FOREIGN KEY (reported_by)
-                    REFERENCES users(user_id)
-            )
-        """)
-
-        # Work orders table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS work_orders (
-                work_order_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                outage_id INTEGER NOT NULL,
-                assigned_technician INTEGER,
-                scheduled_date TEXT,
-                status TEXT DEFAULT 'Pending',
-                FOREIGN KEY (outage_id)
-                    REFERENCES outages(outage_id),
-                FOREIGN KEY (assigned_technician)
-                    REFERENCES users(user_id)
-            )
-        """)
-
-        # Complaints table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS complaints (
-                complaint_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                customer_name TEXT NOT NULL,
-                description TEXT NOT NULL,
-                outage_id INTEGER,
-                reported_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (outage_id)
-                    REFERENCES outages(outage_id)
-            )
-        """)
-
-        conn.commit()
-        conn.close()
+        try:
+            conn.executescript(SCHEMA_PATH.read_text())
+            conn.commit()
+        finally:
+            conn.close()
 
         self.create_default_users()
 
     # --------------------------------------------------------
-    # Create default users
+    # Create default users (bcrypt-hashed passwords)
     # --------------------------------------------------------
 
     def create_default_users(self):
-
         conn = self.connect()
         cursor = conn.cursor()
 
-        users = [
-            ("admin", "admin123", "admin"),
-            ("engineer", "engineer123", "engineer"),
-            ("technician", "tech123", "technician"),
-            ("customer_service", "service123", "customer_service")
-        ]
-
-        for username, password, role in users:
-
-            password_hash = hashlib.sha256(
-                password.encode()
-            ).hexdigest()
+        for username, password, role in DEFAULT_USERS:
+            password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
             try:
-
-                cursor.execute("""
-                    INSERT INTO users
-                    (username, password_hash, role)
-                    VALUES (?, ?, ?)
-                """, (
-                    username,
-                    password_hash,
-                    role
-                ))
-
+                cursor.execute(
+                    "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+                    (username, password_hash.decode("utf-8"), role),
+                )
             except sqlite3.IntegrityError:
-                # User already exists
-                pass
+                pass  # user already exists
 
         conn.commit()
         conn.close()
 
     # --------------------------------------------------------
-    # Import substations.csv
+    # Import substations.csv / lines.csv from the grid-analysis
+    # data-science component, so outages can only be logged against
+    # real substation IDs.
     # --------------------------------------------------------
 
-    def import_substations(self, filename="substations.csv"):
+    def import_substations(self, filename=None):
+        filename = filename or (GRID_DATA_DIR / "substations.csv")
 
         try:
-
             conn = self.connect()
             cursor = conn.cursor()
 
-            with open(
-                filename,
-                "r",
-                newline="",
-                encoding="utf-8-sig"
-            ) as file:
-
+            with open(filename, "r", newline="", encoding="utf-8-sig") as file:
                 reader = csv.DictReader(file)
-
                 for row in reader:
+                    substation_id = row.get("Substation ID") or row.get("substation_id") or row.get("ID")
+                    name = row.get("Name") or row.get("name") or row.get("Substation")
+                    region = row.get("Region") or row.get("region")
 
-                    substation_id = (
-                        row.get("substation_id")
-                        or row.get("Substation ID")
-                        or row.get("ID")
-                    )
-
-                    name = (
-                        row.get("name")
-                        or row.get("Name")
-                        or row.get("Substation")
-                        or row.get("Substation Name")
-                    )
-
-                    region = (
-                        row.get("region")
-                        or row.get("Region")
-                    )
-
-                    if (
-                        substation_id
-                        and name
-                        and region
-                    ):
-
-                        cursor.execute("""
-                            INSERT OR REPLACE INTO substations
-                            (
-                                substation_id,
-                                name,
-                                region
-                            )
-                            VALUES (?, ?, ?)
-                        """, (
-                            int(substation_id),
-                            name,
-                            region
-                        ))
+                    if substation_id and name and region:
+                        cursor.execute(
+                            "INSERT OR REPLACE INTO substations (substation_id, name, region) VALUES (?, ?, ?)",
+                            (int(substation_id), name, region),
+                        )
 
             conn.commit()
             conn.close()
 
-            print("Substations imported successfully.")
-
         except FileNotFoundError:
+            print(f"{filename} was not found.")
+        except (sqlite3.Error, ValueError) as error:
+            print("Error importing substations:", error)
 
-            print("substations.csv was not found.")
-
-        except Exception as error:
-
-            print(
-                "Error importing substations:",
-                error
-            )
-
-    # --------------------------------------------------------
-    # Import lines.csv
-    # --------------------------------------------------------
-
-    def import_lines(self, filename="lines.csv"):
+    def import_lines(self, filename=None):
+        filename = filename or (GRID_DATA_DIR / "lines.csv")
 
         try:
-
             conn = self.connect()
             cursor = conn.cursor()
 
-            with open(
-                filename,
-                "r",
-                newline="",
-                encoding="utf-8-sig"
-            ) as file:
-
+            with open(filename, "r", newline="", encoding="utf-8-sig") as file:
                 reader = csv.DictReader(file)
-
                 for row in reader:
-
-                    source = (
-                        row.get("source_substation")
-                        or row.get("Source Substation")
-                        or row.get("Source")
-                    )
-
-                    destination = (
-                        row.get("destination_substation")
-                        or row.get("Destination Substation")
-                        or row.get("Destination")
-                    )
-
-                    length = (
-                        row.get("length_km")
-                        or row.get("Length (km)")
-                        or row.get("Length")
-                    )
-
-                    voltage = (
-                        row.get("voltage_kv")
-                        or row.get("Voltage (kV)")
-                        or row.get("Voltage")
-                    )
+                    source = row.get("Source Substation") or row.get("source_substation")
+                    destination = row.get("Destination Substation") or row.get("destination_substation")
+                    length = row.get("Length (km)") or row.get("length_km")
+                    voltage = row.get("Voltage (kV)") or row.get("voltage_kv")
 
                     if source and destination:
-
-                        cursor.execute("""
-                            INSERT INTO lines
-                            (
-                                source_substation,
-                                destination_substation,
-                                length_km,
-                                voltage_kv
-                            )
-                            VALUES (?, ?, ?, ?)
-                        """, (
-                            source,
-                            destination,
-                            length,
-                            voltage
-                        ))
+                        cursor.execute(
+                            """INSERT INTO lines
+                               (source_substation, destination_substation, length_km, voltage_kv)
+                               VALUES (?, ?, ?, ?)""",
+                            (source, destination, length, voltage),
+                        )
 
             conn.commit()
             conn.close()
 
-            print("Lines imported successfully.")
-
         except FileNotFoundError:
+            print(f"{filename} was not found.")
+        except (sqlite3.Error, ValueError) as error:
+            print("Error importing lines:", error)
 
-            print("lines.csv was not found.")
+    # --------------------------------------------------------
+    # Authentication
+    # --------------------------------------------------------
 
-        except Exception as error:
+    def verify_login(self, username, password):
+        """Return the (user_id, username, role) row on success, or None."""
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT user_id, username, role, password_hash FROM users WHERE username = ?",
+            (username,),
+        )
+        row = cursor.fetchone()
+        conn.close()
 
-            print(
-                "Error importing lines:",
-                error
-            )
+        if row is None:
+            return None
+
+        user_id, db_username, role, password_hash = row
+        if not bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8")):
+            return None
+
+        return (user_id, db_username, role)
+
+    # --------------------------------------------------------
+    # Outage reporting
+    # --------------------------------------------------------
+
+    def substation_exists(self, substation_id):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM substations WHERE substation_id = ?", (substation_id,))
+        exists = cursor.fetchone() is not None
+        conn.close()
+        return exists
+
+    def log_outage(self, substation_id, reported_by, description, severity):
+        if not self.substation_exists(substation_id):
+            raise ValueError(f"Substation {substation_id} does not exist.")
+        if not description or not description.strip():
+            raise ValueError("Description is required.")
+
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO outages (substation_id, reported_by, description, severity, status)
+               VALUES (?, ?, ?, ?, 'Open')""",
+            (substation_id, reported_by, description.strip(), severity),
+        )
+        conn.commit()
+        outage_id = cursor.lastrowid
+        conn.close()
+        return outage_id
+
+    def list_outages(self):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT outages.outage_id, substations.name, substations.region,
+                   outages.severity, outages.description, outages.status, outages.reported_at
+            FROM outages
+            JOIN substations ON outages.substation_id = substations.substation_id
+            ORDER BY outages.reported_at DESC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        return rows
+
+    # --------------------------------------------------------
+    # Work order management
+    # --------------------------------------------------------
+
+    def _outage_status(self, outage_id):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT status FROM outages WHERE outage_id = ?", (outage_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else None
+
+    def _user_has_role(self, user_id, role):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM users WHERE user_id = ? AND role = ?", (user_id, role))
+        exists = cursor.fetchone() is not None
+        conn.close()
+        return exists
+
+    def assign_work_order(self, outage_id, technician_id, scheduled_date):
+        status = self._outage_status(outage_id)
+        if status is None:
+            raise ValueError(f"Outage {outage_id} does not exist.")
+        if status == "Resolved":
+            raise ValueError(f"Outage {outage_id} is already resolved.")
+        if not self._user_has_role(technician_id, "technician"):
+            raise ValueError(f"User {technician_id} is not a technician.")
+
+        try:
+            datetime.strptime(scheduled_date, "%Y-%m-%d")
+        except (ValueError, TypeError):
+            raise ValueError("Scheduled date must be in YYYY-MM-DD format.")
+
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO work_orders (outage_id, assigned_technician, scheduled_date, status)
+               VALUES (?, ?, ?, 'Scheduled')""",
+            (outage_id, technician_id, scheduled_date),
+        )
+        cursor.execute(
+            "UPDATE outages SET status = 'In Progress' WHERE outage_id = ?",
+            (outage_id,),
+        )
+        conn.commit()
+        work_order_id = cursor.lastrowid
+        conn.close()
+        return work_order_id
+
+    def list_work_orders_for_technician(self, technician_id):
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT work_orders.work_order_id, work_orders.outage_id, substations.name,
+                   work_orders.scheduled_date, work_orders.status
+            FROM work_orders
+            JOIN outages ON work_orders.outage_id = outages.outage_id
+            JOIN substations ON outages.substation_id = substations.substation_id
+            WHERE work_orders.assigned_technician = ?
+        """, (technician_id,))
+        rows = cursor.fetchall()
+        conn.close()
+        return rows
+
+    def complete_work_order(self, work_order_id, technician_id):
+        conn = self.connect()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT outage_id FROM work_orders WHERE work_order_id = ? AND assigned_technician = ?",
+            (work_order_id, technician_id),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            conn.close()
+            raise ValueError("Work order not found for this technician.")
+        outage_id = row[0]
+
+        cursor.execute(
+            "UPDATE work_orders SET status = 'Completed' WHERE work_order_id = ?",
+            (work_order_id,),
+        )
+        cursor.execute(
+            "UPDATE outages SET status = 'Resolved', resolved_at = CURRENT_TIMESTAMP WHERE outage_id = ?",
+            (outage_id,),
+        )
+        conn.commit()
+        conn.close()
+        return outage_id
+
+    # --------------------------------------------------------
+    # Customer complaints
+    # --------------------------------------------------------
+
+    def log_complaint(self, customer_name, description, outage_id=None):
+        if not customer_name or not customer_name.strip():
+            raise ValueError("Customer name is required.")
+        if not description or not description.strip():
+            raise ValueError("Complaint description is required.")
+        if outage_id is not None:
+            conn = self.connect()
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1 FROM outages WHERE outage_id = ?", (outage_id,))
+            exists = cursor.fetchone() is not None
+            conn.close()
+            if not exists:
+                raise ValueError(f"Outage {outage_id} does not exist.")
+
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO complaints (customer_name, description, outage_id) VALUES (?, ?, ?)",
+            (customer_name.strip(), description.strip(), outage_id),
+        )
+        conn.commit()
+        complaint_id = cursor.lastrowid
+        conn.close()
+        return complaint_id
+
+    # --------------------------------------------------------
+    # Reports
+    # --------------------------------------------------------
+
+    def get_reports(self):
+        conn = self.connect()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM outages")
+        total_outages = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM outages WHERE status != 'Resolved'")
+        open_outages = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM outages WHERE status = 'Resolved'")
+        resolved_outages = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT AVG((julianday(resolved_at) - julianday(reported_at)) * 24)
+            FROM outages WHERE resolved_at IS NOT NULL
+        """)
+        average_hours = cursor.fetchone()[0] or 0.0
+
+        cursor.execute("""
+            SELECT substations.region, COUNT(outages.outage_id)
+            FROM outages
+            JOIN substations ON outages.substation_id = substations.substation_id
+            GROUP BY substations.region
+        """)
+        by_region = cursor.fetchall()
+
+        conn.close()
+
+        return {
+            "total_outages": total_outages,
+            "open_outages": open_outages,
+            "resolved_outages": resolved_outages,
+            "average_resolution_hours": average_hours,
+            "outages_by_region": by_region,
+        }
 
 
 # ============================================================
@@ -320,7 +380,6 @@ class Database:
 class LoginWindow(tk.Frame):
 
     def __init__(self, master, database, on_success):
-
         super().__init__(master)
 
         self.master = master
@@ -330,80 +389,20 @@ class LoginWindow(tk.Frame):
         master.title("GridCare-Lite - Login")
         master.geometry("450x350")
 
-        # Title
-        ttk.Label(
-            self,
-            text="GridCare-Lite",
-            font=("Arial", 24, "bold")
-        ).grid(
-            row=0,
-            column=0,
-            columnspan=2,
-            pady=20
-        )
+        ttk.Label(self, text="GridCare-Lite", font=("Arial", 24, "bold")).grid(
+            row=0, column=0, columnspan=2, pady=20)
 
-        # Username
-        ttk.Label(
-            self,
-            text="Username:"
-        ).grid(
-            row=1,
-            column=0,
-            padx=8,
-            pady=8,
-            sticky="e"
-        )
+        ttk.Label(self, text="Username:").grid(row=1, column=0, padx=8, pady=8, sticky="e")
+        self.username_entry = ttk.Entry(self, width=30)
+        self.username_entry.grid(row=1, column=1, padx=8, pady=8)
 
-        self.username_entry = ttk.Entry(
-            self,
-            width=30
-        )
+        ttk.Label(self, text="Password:").grid(row=2, column=0, padx=8, pady=8, sticky="e")
+        self.password_entry = ttk.Entry(self, show="*", width=30)
+        self.password_entry.grid(row=2, column=1, padx=8, pady=8)
 
-        self.username_entry.grid(
-            row=1,
-            column=1,
-            padx=8,
-            pady=8
-        )
+        ttk.Button(self, text="Log In", command=self.attempt_login).grid(
+            row=3, column=0, columnspan=2, pady=15)
 
-        # Password
-        ttk.Label(
-            self,
-            text="Password:"
-        ).grid(
-            row=2,
-            column=0,
-            padx=8,
-            pady=8,
-            sticky="e"
-        )
-
-        self.password_entry = ttk.Entry(
-            self,
-            show="*",
-            width=30
-        )
-
-        self.password_entry.grid(
-            row=2,
-            column=1,
-            padx=8,
-            pady=8
-        )
-
-        # Login button
-        ttk.Button(
-            self,
-            text="Log In",
-            command=self.attempt_login
-        ).grid(
-            row=3,
-            column=0,
-            columnspan=2,
-            pady=15
-        )
-
-        # Test accounts
         ttk.Label(
             self,
             text=(
@@ -413,65 +412,27 @@ class LoginWindow(tk.Frame):
                 "technician / tech123\n"
                 "customer_service / service123"
             ),
-            justify="center"
-        ).grid(
-            row=4,
-            column=0,
-            columnspan=2,
-            pady=10
-        )
+            justify="center",
+        ).grid(row=4, column=0, columnspan=2, pady=10)
 
-        self.pack(
-            padx=20,
-            pady=20
-        )
-
-    # --------------------------------------------------------
-    # Check login details
-    # --------------------------------------------------------
+        self.pack(padx=20, pady=20)
 
     def attempt_login(self):
-
         username = self.username_entry.get().strip()
         password = self.password_entry.get()
 
         if not username or not password:
-
-            messagebox.showerror(
-                "Login Failed",
-                "Please enter both a username and password."
-            )
-
+            messagebox.showerror("Login Failed", "Please enter both a username and password.")
             return
 
-        password_hash = hashlib.sha256(
-            password.encode()
-        ).hexdigest()
-
-        conn = self.database.connect()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT user_id, username, role
-            FROM users
-            WHERE username = ?
-            AND password_hash = ?
-        """, (
-            username,
-            password_hash
-        ))
-
-        user = cursor.fetchone()
-
-        conn.close()
+        try:
+            user = self.database.verify_login(username, password)
+        except sqlite3.Error as error:
+            messagebox.showerror("Database Error", f"Could not verify credentials: {error}")
+            return
 
         if user is None:
-
-            messagebox.showerror(
-                "Login Failed",
-                "Incorrect username or password."
-            )
-
+            messagebox.showerror("Login Failed", "Incorrect username or password.")
             return
 
         self.on_success(user)
@@ -484,7 +445,6 @@ class LoginWindow(tk.Frame):
 class Dashboard(tk.Frame):
 
     def __init__(self, master, database, user, logout):
-
         super().__init__(master)
 
         self.master = master
@@ -492,223 +452,59 @@ class Dashboard(tk.Frame):
         self.user = user
         self.logout = logout
 
-        user_id = user[0]
-        username = user[1]
-        role = user[2]
+        user_id, username, role = user
 
-        master.title(
-            f"GridCare-Lite - Dashboard ({username})"
-        )
-
+        master.title(f"GridCare-Lite - Dashboard ({username})")
         master.geometry("900x600")
 
-        # Title
-        ttk.Label(
-            self,
-            text="GridCare-Lite",
-            font=("Arial", 24, "bold")
-        ).pack(pady=15)
+        ttk.Label(self, text="GridCare-Lite", font=("Arial", 24, "bold")).pack(pady=15)
+        ttk.Label(self, text=f"Welcome {username} | Role: {role}", font=("Arial", 12)).pack(pady=5)
 
-        ttk.Label(
-            self,
-            text=f"Welcome {username} | Role: {role}",
-            font=("Arial", 12)
-        ).pack(pady=5)
-
-        # Buttons
         button_frame = ttk.Frame(self)
         button_frame.pack(pady=25)
 
-        # Engineer
         if role == "engineer":
+            ttk.Button(button_frame, text="Report New Outage", command=self.new_outage).pack(pady=8, ipadx=20)
+            ttk.Button(button_frame, text="View Outages", command=self.outage_dashboard).pack(pady=8, ipadx=20)
 
-            ttk.Button(
-                button_frame,
-                text="Report New Outage",
-                command=self.new_outage
-            ).pack(
-                pady=8,
-                ipadx=20
-            )
-
-            ttk.Button(
-                button_frame,
-                text="View Outages",
-                command=self.outage_dashboard
-            ).pack(
-                pady=8,
-                ipadx=20
-            )
-
-        # Admin
         elif role == "admin":
+            ttk.Button(button_frame, text="View Outages", command=self.outage_dashboard).pack(pady=8, ipadx=20)
+            ttk.Button(button_frame, text="Assign Work Order", command=self.assign_work_order).pack(pady=8, ipadx=20)
+            ttk.Button(button_frame, text="Reports", command=self.reports).pack(pady=8, ipadx=20)
 
-            ttk.Button(
-                button_frame,
-                text="View Outages",
-                command=self.outage_dashboard
-            ).pack(
-                pady=8,
-                ipadx=20
-            )
-
-            ttk.Button(
-                button_frame,
-                text="Assign Work Order",
-                command=self.assign_work_order
-            ).pack(
-                pady=8,
-                ipadx=20
-            )
-
-            ttk.Button(
-                button_frame,
-                text="Reports",
-                command=self.reports
-            ).pack(
-                pady=8,
-                ipadx=20
-            )
-
-        # Technician
         elif role == "technician":
+            ttk.Button(button_frame, text="My Work Orders", command=self.technician_orders).pack(pady=8, ipadx=20)
 
-            ttk.Button(
-                button_frame,
-                text="My Work Orders",
-                command=self.technician_orders
-            ).pack(
-                pady=8,
-                ipadx=20
-            )
-
-        # Customer service
         elif role == "customer_service":
+            ttk.Button(button_frame, text="View Outages", command=self.outage_dashboard).pack(pady=8, ipadx=20)
+            ttk.Button(button_frame, text="Log Customer Complaint", command=self.complaint).pack(pady=8, ipadx=20)
 
-            ttk.Button(
-                button_frame,
-                text="View Outages",
-                command=self.outage_dashboard
-            ).pack(
-                pady=8,
-                ipadx=20
-            )
+        ttk.Button(self, text="Log Out", command=self.logout).pack(pady=20)
 
-            ttk.Button(
-                button_frame,
-                text="Log Customer Complaint",
-                command=self.complaint
-            ).pack(
-                pady=8,
-                ipadx=20
-            )
-
-        # Logout
-        ttk.Button(
-            self,
-            text="Log Out",
-            command=self.logout
-        ).pack(pady=20)
-
-        self.pack(
-            fill="both",
-            expand=True
-        )
+        self.pack(fill="both", expand=True)
 
     # ========================================================
     # OUTAGE DASHBOARD
     # ========================================================
 
     def outage_dashboard(self):
-
         window = tk.Toplevel(self.master)
+        window.title("GridCare-Lite - Outage Dashboard")
+        window.geometry("850x500")
 
-        window.title(
-            "GridCare-Lite - Outage Dashboard"
-        )
-
-        window.geometry(
-            "850x500"
-        )
-
-        columns = (
-            "outage_id",
-            "substation",
-            "region",
-            "severity",
-            "description",
-            "status",
-            "reported_at"
-        )
-
-        tree = ttk.Treeview(
-            window,
-            columns=columns,
-            show="headings"
-        )
-
+        columns = ("outage_id", "substation", "region", "severity", "description", "status", "reported_at")
+        tree = ttk.Treeview(window, columns=columns, show="headings")
         for column in columns:
-
-            tree.heading(
-                column,
-                text=column.replace(
-                    "_",
-                    " "
-                ).title()
-            )
-
-        tree.pack(
-            fill="both",
-            expand=True,
-            padx=10,
-            pady=10
-        )
+            tree.heading(column, text=column.replace("_", " ").title())
+        tree.pack(fill="both", expand=True, padx=10, pady=10)
 
         def load_outages():
-
             for row in tree.get_children():
                 tree.delete(row)
+            for row in self.database.list_outages():
+                tree.insert("", "end", values=row)
 
-            conn = self.database.connect()
-            cursor = conn.cursor()
-
-            cursor.execute("""
-                SELECT
-                    outages.outage_id,
-                    substations.name,
-                    substations.region,
-                    outages.severity,
-                    outages.description,
-                    outages.status,
-                    outages.reported_at
-
-                FROM outages
-
-                JOIN substations
-                ON outages.substation_id =
-                   substations.substation_id
-
-                ORDER BY outages.reported_at DESC
-            """)
-
-            rows = cursor.fetchall()
-
-            conn.close()
-
-            for row in rows:
-
-                tree.insert(
-                    "",
-                    "end",
-                    values=row
-                )
-
-        ttk.Button(
-            window,
-            text="Refresh",
-            command=load_outages
-        ).pack(pady=5)
-
+        ttk.Button(window, text="Refresh", command=load_outages).pack(pady=5)
         load_outages()
 
     # ========================================================
@@ -716,543 +512,179 @@ class Dashboard(tk.Frame):
     # ========================================================
 
     def new_outage(self):
-
         window = tk.Toplevel(self.master)
+        window.title("GridCare-Lite - New Outage")
+        window.geometry("500x450")
 
-        window.title(
-            "GridCare-Lite - New Outage"
-        )
+        ttk.Label(window, text="Report New Outage", font=("Arial", 18, "bold")).pack(pady=15)
 
-        window.geometry(
-            "500x450"
-        )
-
-        ttk.Label(
-            window,
-            text="Report New Outage",
-            font=("Arial", 18, "bold")
-        ).pack(pady=15)
-
-        # Substation
-        ttk.Label(
-            window,
-            text="Substation:"
-        ).pack(pady=5)
-
-        substation_box = ttk.Combobox(
-            window,
-            state="readonly",
-            width=45
-        )
-
+        ttk.Label(window, text="Substation:").pack(pady=5)
+        substation_box = ttk.Combobox(window, state="readonly", width=45)
         substation_box.pack()
 
         conn = self.database.connect()
         cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT substation_id, name
-            FROM substations
-            ORDER BY name
-        """)
-
+        cursor.execute("SELECT substation_id, name FROM substations ORDER BY name")
         substations = cursor.fetchall()
-
         conn.close()
 
-        substation_values = []
-
-        for substation in substations:
-
-            substation_values.append(
-                f"{substation[0]} - {substation[1]}"
-            )
-
+        substation_values = [f"{sid} - {name}" for sid, name in substations]
         substation_box["values"] = substation_values
-
         if substation_values:
             substation_box.current(0)
 
-        # Description
-        ttk.Label(
-            window,
-            text="Description:"
-        ).pack(pady=(15, 5))
-
-        description = tk.Text(
-            window,
-            width=50,
-            height=6
-        )
-
+        ttk.Label(window, text="Description:").pack(pady=(15, 5))
+        description = tk.Text(window, width=50, height=6)
         description.pack()
 
-        # Severity
-        ttk.Label(
-            window,
-            text="Severity:"
-        ).pack(pady=(15, 5))
-
-        severity_box = ttk.Combobox(
-            window,
-            values=[
-                "Low",
-                "Medium",
-                "High",
-                "Critical"
-            ],
-            state="readonly"
-        )
-
+        ttk.Label(window, text="Severity:").pack(pady=(15, 5))
+        severity_box = ttk.Combobox(window, values=["Low", "Medium", "High", "Critical"], state="readonly")
         severity_box.pack()
-
         severity_box.current(0)
 
-        # Save outage
         def save_outage():
-
             if not substation_box.get():
-
-                messagebox.showerror(
-                    "Error",
-                    "Please select a substation."
-                )
-
+                messagebox.showerror("Error", "Please select a substation.")
                 return
 
-            outage_description = (
-                description.get(
-                    "1.0",
-                    tk.END
-                ).strip()
-            )
-
-            if not outage_description:
-
-                messagebox.showerror(
-                    "Error",
-                    "Please enter a description."
-                )
-
-                return
-
-            selected_substation = (
-                substation_box.get()
-            )
-
-            substation_id = int(
-                selected_substation.split(" - ")[0]
-            )
-
+            outage_description = description.get("1.0", tk.END).strip()
+            substation_id = int(substation_box.get().split(" - ")[0])
             severity = severity_box.get()
 
-            conn = self.database.connect()
-            cursor = conn.cursor()
+            try:
+                self.database.log_outage(substation_id, self.user[0], outage_description, severity)
+            except ValueError as error:
+                messagebox.showerror("Error", str(error))
+                return
+            except sqlite3.Error as error:
+                messagebox.showerror("Database Error", f"Could not save the outage: {error}")
+                return
 
-            cursor.execute("""
-                INSERT INTO outages
-                (
-                    substation_id,
-                    reported_by,
-                    description,
-                    severity,
-                    status
-                )
-                VALUES (?, ?, ?, ?, 'Open')
-            """, (
-                substation_id,
-                self.user[0],
-                outage_description,
-                severity
-            ))
-
-            conn.commit()
-            conn.close()
-
-            messagebox.showinfo(
-                "Success",
-                "Outage successfully reported."
-            )
-
+            messagebox.showinfo("Success", "Outage successfully reported.")
             window.destroy()
 
-        ttk.Button(
-            window,
-            text="Submit Outage",
-            command=save_outage
-        ).pack(pady=20)
+        ttk.Button(window, text="Submit Outage", command=save_outage).pack(pady=20)
 
     # ========================================================
     # WORK ORDER ASSIGNMENT
     # ========================================================
 
     def assign_work_order(self):
-
         window = tk.Toplevel(self.master)
+        window.title("GridCare-Lite - Work Order Assignment")
+        window.geometry("550x450")
 
-        window.title(
-            "GridCare-Lite - Work Order Assignment"
-        )
+        ttk.Label(window, text="Assign Work Order", font=("Arial", 18, "bold")).pack(pady=15)
 
-        window.geometry(
-            "550x450"
-        )
-
-        ttk.Label(
-            window,
-            text="Assign Work Order",
-            font=("Arial", 18, "bold")
-        ).pack(pady=15)
-
-        # Outage
-        ttk.Label(
-            window,
-            text="Select Outage:"
-        ).pack(pady=5)
-
-        outage_box = ttk.Combobox(
-            window,
-            state="readonly",
-            width=50
-        )
-
+        ttk.Label(window, text="Select Outage:").pack(pady=5)
+        outage_box = ttk.Combobox(window, state="readonly", width=50)
         outage_box.pack()
 
         conn = self.database.connect()
         cursor = conn.cursor()
-
         cursor.execute("""
-            SELECT
-                outages.outage_id,
-                substations.name,
-                outages.severity
-
+            SELECT outages.outage_id, substations.name, outages.severity
             FROM outages
-
-            JOIN substations
-            ON outages.substation_id =
-               substations.substation_id
-
+            JOIN substations ON outages.substation_id = substations.substation_id
             WHERE outages.status != 'Resolved'
         """)
-
         outages = cursor.fetchall()
-
         conn.close()
 
-        outage_values = []
-
-        for outage in outages:
-
-            outage_values.append(
-                f"{outage[0]} - "
-                f"{outage[1]} - "
-                f"{outage[2]}"
-            )
-
+        outage_values = [f"{oid} - {name} - {severity}" for oid, name, severity in outages]
         outage_box["values"] = outage_values
-
         if outage_values:
             outage_box.current(0)
 
-        # Technician
-        ttk.Label(
-            window,
-            text="Assign Technician:"
-        ).pack(pady=(15, 5))
-
-        technician_box = ttk.Combobox(
-            window,
-            state="readonly",
-            width=40
-        )
-
+        ttk.Label(window, text="Assign Technician:").pack(pady=(15, 5))
+        technician_box = ttk.Combobox(window, state="readonly", width=40)
         technician_box.pack()
 
         conn = self.database.connect()
         cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT user_id, username
-            FROM users
-            WHERE role = 'technician'
-        """)
-
+        cursor.execute("SELECT user_id, username FROM users WHERE role = 'technician'")
         technicians = cursor.fetchall()
-
         conn.close()
 
-        technician_values = []
-
-        for technician in technicians:
-
-            technician_values.append(
-                f"{technician[0]} - {technician[1]}"
-            )
-
+        technician_values = [f"{tid} - {name}" for tid, name in technicians]
         technician_box["values"] = technician_values
-
         if technician_values:
             technician_box.current(0)
 
-        # Scheduled date
-        ttk.Label(
-            window,
-            text="Scheduled Date (YYYY-MM-DD):"
-        ).pack(pady=(15, 5))
-
-        date_entry = ttk.Entry(
-            window,
-            width=30
-        )
-
+        ttk.Label(window, text="Scheduled Date (YYYY-MM-DD):").pack(pady=(15, 5))
+        date_entry = ttk.Entry(window, width=30)
         date_entry.pack()
 
-        # Save
         def save_work_order():
-
             if not outage_box.get():
-
-                messagebox.showerror(
-                    "Error",
-                    "Please select an outage."
-                )
-
+                messagebox.showerror("Error", "Please select an outage.")
                 return
-
             if not technician_box.get():
-
-                messagebox.showerror(
-                    "Error",
-                    "Please select a technician."
-                )
-
+                messagebox.showerror("Error", "Please select a technician.")
                 return
 
-            scheduled_date = (
-                date_entry.get().strip()
-            )
+            outage_id = int(outage_box.get().split(" - ")[0])
+            technician_id = int(technician_box.get().split(" - ")[0])
+            scheduled_date = date_entry.get().strip()
 
             try:
-
-                datetime.strptime(
-                    scheduled_date,
-                    "%Y-%m-%d"
-                )
-
-            except ValueError:
-
-                messagebox.showerror(
-                    "Error",
-                    "Date must be YYYY-MM-DD."
-                )
-
+                self.database.assign_work_order(outage_id, technician_id, scheduled_date)
+            except ValueError as error:
+                messagebox.showerror("Error", str(error))
+                return
+            except sqlite3.Error as error:
+                messagebox.showerror("Database Error", f"Could not assign the work order: {error}")
                 return
 
-            outage_id = int(
-                outage_box.get().split(" - ")[0]
-            )
-
-            technician_id = int(
-                technician_box.get().split(" - ")[0]
-            )
-
-            conn = self.database.connect()
-            cursor = conn.cursor()
-
-            cursor.execute("""
-                INSERT INTO work_orders
-                (
-                    outage_id,
-                    assigned_technician,
-                    scheduled_date,
-                    status
-                )
-                VALUES (?, ?, ?, 'Scheduled')
-            """, (
-                outage_id,
-                technician_id,
-                scheduled_date
-            ))
-
-            cursor.execute("""
-                UPDATE outages
-                SET status = 'In Progress'
-                WHERE outage_id = ?
-            """, (
-                outage_id,
-            ))
-
-            conn.commit()
-            conn.close()
-
-            messagebox.showinfo(
-                "Success",
-                "Work order assigned successfully."
-            )
-
+            messagebox.showinfo("Success", "Work order assigned successfully.")
             window.destroy()
 
-        ttk.Button(
-            window,
-            text="Assign Work Order",
-            command=save_work_order
-        ).pack(pady=20)
+        ttk.Button(window, text="Assign Work Order", command=save_work_order).pack(pady=20)
 
     # ========================================================
     # TECHNICIAN WORK ORDERS
     # ========================================================
 
     def technician_orders(self):
-
         window = tk.Toplevel(self.master)
+        window.title("GridCare-Lite - Technician Work Orders")
+        window.geometry("800x500")
 
-        window.title(
-            "GridCare-Lite - Technician Work Orders"
-        )
+        ttk.Label(window, text="My Work Orders", font=("Arial", 18, "bold")).pack(pady=15)
 
-        window.geometry(
-            "800x500"
-        )
-
-        ttk.Label(
-            window,
-            text="My Work Orders",
-            font=("Arial", 18, "bold")
-        ).pack(pady=15)
-
-        columns = (
-            "work_order_id",
-            "outage_id",
-            "substation",
-            "scheduled_date",
-            "status"
-        )
-
-        tree = ttk.Treeview(
-            window,
-            columns=columns,
-            show="headings"
-        )
-
+        columns = ("work_order_id", "outage_id", "substation", "scheduled_date", "status")
+        tree = ttk.Treeview(window, columns=columns, show="headings")
         for column in columns:
-
-            tree.heading(
-                column,
-                text=column.replace(
-                    "_",
-                    " "
-                ).title()
-            )
-
-        tree.pack(
-            fill="both",
-            expand=True,
-            padx=10,
-            pady=10
-        )
+            tree.heading(column, text=column.replace("_", " ").title())
+        tree.pack(fill="both", expand=True, padx=10, pady=10)
 
         def load_orders():
-
             for item in tree.get_children():
                 tree.delete(item)
+            for row in self.database.list_work_orders_for_technician(self.user[0]):
+                tree.insert("", "end", values=row)
 
-            conn = self.database.connect()
-            cursor = conn.cursor()
-
-            cursor.execute("""
-                SELECT
-                    work_orders.work_order_id,
-                    work_orders.outage_id,
-                    substations.name,
-                    work_orders.scheduled_date,
-                    work_orders.status
-
-                FROM work_orders
-
-                JOIN outages
-                ON work_orders.outage_id =
-                   outages.outage_id
-
-                JOIN substations
-                ON outages.substation_id =
-                   substations.substation_id
-
-                WHERE work_orders.assigned_technician = ?
-            """, (
-                self.user[0],
-            ))
-
-            rows = cursor.fetchall()
-
-            conn.close()
-
-            for row in rows:
-
-                tree.insert(
-                    "",
-                    "end",
-                    values=row
-                )
-
-        def complete_work_order():
-
+        def complete_selected_work_order():
             selected = tree.selection()
-
             if not selected:
-
-                messagebox.showerror(
-                    "Error",
-                    "Select a work order first."
-                )
-
+                messagebox.showerror("Error", "Select a work order first.")
                 return
 
-            values = tree.item(
-                selected[0]
-            )["values"]
+            work_order_id = tree.item(selected[0])["values"][0]
 
-            work_order_id = values[0]
-            outage_id = values[1]
+            try:
+                self.database.complete_work_order(work_order_id, self.user[0])
+            except ValueError as error:
+                messagebox.showerror("Error", str(error))
+                return
+            except sqlite3.Error as error:
+                messagebox.showerror("Database Error", f"Could not complete the work order: {error}")
+                return
 
-            conn = self.database.connect()
-            cursor = conn.cursor()
-
-            cursor.execute("""
-                UPDATE work_orders
-                SET status = 'Completed'
-                WHERE work_order_id = ?
-                AND assigned_technician = ?
-            """, (
-                work_order_id,
-                self.user[0]
-            ))
-
-            cursor.execute("""
-                UPDATE outages
-                SET status = 'Resolved',
-                    resolved_at = CURRENT_TIMESTAMP
-                WHERE outage_id = ?
-            """, (
-                outage_id,
-            ))
-
-            conn.commit()
-            conn.close()
-
-            messagebox.showinfo(
-                "Success",
-                "Work order completed and outage resolved."
-            )
-
+            messagebox.showinfo("Success", "Work order completed and outage resolved.")
             load_orders()
 
-        ttk.Button(
-            window,
-            text="Mark Selected Work Order Complete",
-            command=complete_work_order
-        ).pack(pady=10)
-
+        ttk.Button(window, text="Mark Selected Work Order Complete", command=complete_selected_work_order).pack(pady=10)
         load_orders()
 
     # ========================================================
@@ -1260,308 +692,82 @@ class Dashboard(tk.Frame):
     # ========================================================
 
     def complaint(self):
-
         window = tk.Toplevel(self.master)
+        window.title("GridCare-Lite - Customer Complaint")
+        window.geometry("500x450")
 
-        window.title(
-            "GridCare-Lite - Customer Complaint"
-        )
+        ttk.Label(window, text="Customer Complaint", font=("Arial", 18, "bold")).pack(pady=15)
 
-        window.geometry(
-            "500x450"
-        )
-
-        ttk.Label(
-            window,
-            text="Customer Complaint",
-            font=("Arial", 18, "bold")
-        ).pack(pady=15)
-
-        # Customer name
-        ttk.Label(
-            window,
-            text="Customer Name:"
-        ).pack(pady=5)
-
-        customer_name = ttk.Entry(
-            window,
-            width=40
-        )
-
+        ttk.Label(window, text="Customer Name:").pack(pady=5)
+        customer_name = ttk.Entry(window, width=40)
         customer_name.pack()
 
-        # Outage ID
-        ttk.Label(
-            window,
-            text="Known Outage ID (optional):"
-        ).pack(
-            pady=(15, 5)
-        )
-
-        outage_id_entry = ttk.Entry(
-            window,
-            width=30
-        )
-
+        ttk.Label(window, text="Known Outage ID (optional):").pack(pady=(15, 5))
+        outage_id_entry = ttk.Entry(window, width=30)
         outage_id_entry.pack()
 
-        # Description
-        ttk.Label(
-            window,
-            text="Complaint:"
-        ).pack(
-            pady=(15, 5)
-        )
-
-        complaint_text = tk.Text(
-            window,
-            width=50,
-            height=7
-        )
-
+        ttk.Label(window, text="Complaint:").pack(pady=(15, 5))
+        complaint_text = tk.Text(window, width=50, height=7)
         complaint_text.pack()
 
         def save_complaint():
-
             name = customer_name.get().strip()
+            description = complaint_text.get("1.0", tk.END).strip()
+            outage_text = outage_id_entry.get().strip()
 
-            description = (
-                complaint_text.get(
-                    "1.0",
-                    tk.END
-                ).strip()
-            )
-
-            outage_text = (
-                outage_id_entry.get().strip()
-            )
-
-            if not name:
-
-                messagebox.showerror(
-                    "Error",
-                    "Enter the customer's name."
-                )
-
-                return
-
-            if not description:
-
-                messagebox.showerror(
-                    "Error",
-                    "Enter the complaint."
-                )
-
-                return
-
-            if outage_text == "":
-                outage_id = None
-
-            else:
-
+            outage_id = None
+            if outage_text:
                 try:
                     outage_id = int(outage_text)
-
                 except ValueError:
-
-                    messagebox.showerror(
-                        "Error",
-                        "Outage ID must be a number."
-                    )
-
+                    messagebox.showerror("Error", "Outage ID must be a number.")
                     return
 
-            conn = self.database.connect()
-            cursor = conn.cursor()
+            try:
+                self.database.log_complaint(name, description, outage_id)
+            except ValueError as error:
+                messagebox.showerror("Error", str(error))
+                return
+            except sqlite3.Error as error:
+                messagebox.showerror("Database Error", f"Could not save the complaint: {error}")
+                return
 
-            cursor.execute("""
-                INSERT INTO complaints
-                (
-                    customer_name,
-                    description,
-                    outage_id
-                )
-                VALUES (?, ?, ?)
-            """, (
-                name,
-                description,
-                outage_id
-            ))
-
-            conn.commit()
-            conn.close()
-
-            messagebox.showinfo(
-                "Success",
-                "Customer complaint recorded."
-            )
-
+            messagebox.showinfo("Success", "Customer complaint recorded.")
             window.destroy()
 
-        ttk.Button(
-            window,
-            text="Save Complaint",
-            command=save_complaint
-        ).pack(pady=20)
+        ttk.Button(window, text="Save Complaint", command=save_complaint).pack(pady=20)
 
     # ========================================================
     # BASIC REPORTS
     # ========================================================
 
     def reports(self):
-
         window = tk.Toplevel(self.master)
+        window.title("GridCare-Lite - Reports")
+        window.geometry("600x500")
 
-        window.title(
-            "GridCare-Lite - Reports"
-        )
+        ttk.Label(window, text="GridCare-Lite Reports", font=("Arial", 20, "bold")).pack(pady=20)
 
-        window.geometry(
-            "600x500"
-        )
+        data = self.database.get_reports()
 
+        ttk.Label(window, text=f"Total Outages: {data['total_outages']}", font=("Arial", 14)).pack(pady=10)
+        ttk.Label(window, text=f"Open Outages: {data['open_outages']}", font=("Arial", 14)).pack(pady=10)
+        ttk.Label(window, text=f"Resolved Outages: {data['resolved_outages']}", font=("Arial", 14)).pack(pady=10)
         ttk.Label(
             window,
-            text="GridCare-Lite Reports",
-            font=("Arial", 20, "bold")
-        ).pack(pady=20)
-
-        conn = self.database.connect()
-        cursor = conn.cursor()
-
-        # Total outages
-        cursor.execute("""
-            SELECT COUNT(*)
-            FROM outages
-        """)
-
-        total_outages = cursor.fetchone()[0]
-
-        # Open outages
-        cursor.execute("""
-            SELECT COUNT(*)
-            FROM outages
-            WHERE status != 'Resolved'
-        """)
-
-        open_outages = cursor.fetchone()[0]
-
-        # Resolved outages
-        cursor.execute("""
-            SELECT COUNT(*)
-            FROM outages
-            WHERE status = 'Resolved'
-        """)
-
-        resolved_outages = cursor.fetchone()[0]
-
-        # Average resolution time
-        cursor.execute("""
-            SELECT AVG(
-                (
-                    julianday(resolved_at)
-                    -
-                    julianday(reported_at)
-                ) * 24
-            )
-            FROM outages
-            WHERE resolved_at IS NOT NULL
-        """)
-
-        average_time = cursor.fetchone()[0]
-
-        if average_time is None:
-            average_time = 0
-
-        conn.close()
-
-        ttk.Label(
-            window,
-            text=f"Total Outages: {total_outages}",
-            font=("Arial", 14)
+            text=f"Average Resolution Time: {data['average_resolution_hours']:.2f} hours",
+            font=("Arial", 14),
         ).pack(pady=10)
 
-        ttk.Label(
-            window,
-            text=f"Open Outages: {open_outages}",
-            font=("Arial", 14)
-        ).pack(pady=10)
+        ttk.Label(window, text="Outages by Region", font=("Arial", 16, "bold")).pack(pady=15)
 
-        ttk.Label(
-            window,
-            text=f"Resolved Outages: {resolved_outages}",
-            font=("Arial", 14)
-        ).pack(pady=10)
+        region_table = ttk.Treeview(window, columns=("region", "count"), show="headings")
+        region_table.heading("region", text="Region")
+        region_table.heading("count", text="Outages")
+        region_table.pack(fill="both", expand=True, padx=20)
 
-        ttk.Label(
-            window,
-            text=(
-                f"Average Resolution Time: "
-                f"{average_time:.2f} hours"
-            ),
-            font=("Arial", 14)
-        ).pack(pady=10)
-
-        # Outages by region
-        ttk.Label(
-            window,
-            text="Outages by Region",
-            font=("Arial", 16, "bold")
-        ).pack(pady=15)
-
-        region_table = ttk.Treeview(
-            window,
-            columns=(
-                "region",
-                "count"
-            ),
-            show="headings"
-        )
-
-        region_table.heading(
-            "region",
-            text="Region"
-        )
-
-        region_table.heading(
-            "count",
-            text="Outages"
-        )
-
-        region_table.pack(
-            fill="both",
-            expand=True,
-            padx=20
-        )
-
-        conn = self.database.connect()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT
-                substations.region,
-                COUNT(outages.outage_id)
-
-            FROM outages
-
-            JOIN substations
-            ON outages.substation_id =
-               substations.substation_id
-
-            GROUP BY substations.region
-        """)
-
-        rows = cursor.fetchall()
-
-        conn.close()
-
-        for row in rows:
-
-            region_table.insert(
-                "",
-                "end",
-                values=row
-            )
+        for row in data["outages_by_region"]:
+            region_table.insert("", "end", values=row)
 
 
 # ============================================================
@@ -1569,60 +775,25 @@ class Dashboard(tk.Frame):
 # ============================================================
 
 def main():
-
-    # Create database
     database = Database()
-
-    # Import reference data
     database.import_substations()
     database.import_lines()
 
-    # Create main window
     root = tk.Tk()
 
-    # --------------------------------------------------------
-    # Show dashboard after successful login
-    # --------------------------------------------------------
-
     def show_dashboard(user):
-
-        # Remove current screen
         for widget in root.winfo_children():
             widget.destroy()
-
-        # Create dashboard
-        Dashboard(
-            root,
-            database,
-            user,
-            show_login
-        )
-
-    # --------------------------------------------------------
-    # Show login screen
-    # --------------------------------------------------------
+        Dashboard(root, database, user, show_login)
 
     def show_login():
-
         for widget in root.winfo_children():
             widget.destroy()
+        LoginWindow(root, database, show_dashboard)
 
-        LoginWindow(
-            root,
-            database,
-            show_dashboard
-        )
-
-    # Start with login
     show_login()
-
-    # Start GUI loop
     root.mainloop()
 
-
-# ============================================================
-# PROGRAM START
-# ============================================================
 
 if __name__ == "__main__":
     main()
