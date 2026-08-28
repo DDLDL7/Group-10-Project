@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Conversation with {{ patient.name }}{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Conversation with {{ patient.name }}</h1>
+<div class="messaging-notice">This channel is <strong>not monitored continuously</strong> and must not be used for emergencies.</div>
+
+<div class="card p-3 mb-3 chat-scroll" style="max-height:400px; overflow-y:auto;">
+  {% for m in thread %}
+    <div class="chat-bubble {{ 'mine' if m.sender_id == current_user.user_id else 'theirs' }}">
+      <div>{{ m.content }}</div>
+      <div class="small opacity-75">{{ m.timestamp }}</div>
+    </div>
+  {% else %}
+    <p class="text-muted mb-0">No messages yet.</p>
+  {% endfor %}
+</div>
+
+<form method="post" class="d-flex gap-2">
+  <input class="form-control" name="content" placeholder="Type a non-urgent message..." required>
+  <button class="btn btn-primary" type="submit">Send</button>
+</form>
+{% endblock %}

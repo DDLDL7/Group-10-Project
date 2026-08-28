@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Access Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Public+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ====================================================================
+     TOKENS
+     Light is the bare-:root default. Dark responds to prefers-color-scheme
+     unless data-theme="light" is set; data-theme="dark" wins explicitly.
+     ==================================================================== */
+  :root {
+    /* Palette matches ClinicCare-Lite's "colorful" theme exactly
+       (clinicare-lite/static/css/styles.css) so this guide reads as part
+       of the same product family. */
+    --bg-1: #e3faf3;
+    --bg-2: #eef0ff;
+    --bg-3: #fff1f5;
+    --surface: #ffffff;
+    --surface-2: #f8f9ff;
+    --text: #1f2430;
+    --muted: #667085;
+    --accent: #14b8a6;      /* teal */
+    --accent-ink: #0f9c8f;  /* text-safe teal */
+    --accent-2: #fb7185;    /* rose */
+    --accent-3: #f59e0b;    /* amber */
+    --border: #e4e9f5;
+    --lock: #b5730a;
+    --good: #1f8a5f;
+    --dim: 0.42;
+    --shadow: 0 10px 28px rgba(31,36,66,.08);
+    --font-display: 'Manrope', -apple-system, sans-serif;
+    --font-body: 'Public Sans', -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'Roboto Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg-1: #0f0c29; --bg-2: #1a1033; --bg-3: #14112b;
+      --surface: #1c1a35; --surface-2: #201d3d;
+      --text: #eef0f7; --muted: #a3a8c9;
+      --accent: #8b5cf6;      /* violet */
+      --accent-ink: #b3a1fc;  /* text-safe violet */
+      --accent-2: #22d3ee;    /* cyan */
+      --accent-3: #fbbf24;    /* amber */
+      --border: #322d58; --lock: #e0a530; --good: #4fbf8f;
+      --shadow: 0 10px 28px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg-1: #0f0c29; --bg-2: #1a1033; --bg-3: #14112b;
+    --surface: #1c1a35; --surface-2: #201d3d;
+    --text: #eef0f7; --muted: #a3a8c9;
+    --accent: #8b5cf6;
+    --accent-ink: #b3a1fc;
+    --accent-2: #22d3ee;
+    --accent-3: #fbbf24;
+    --border: #322d58; --lock: #e0a530; --good: #4fbf8f;
+    --shadow: 0 10px 28px rgba(0,0,0,.45);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--text);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    background: linear-gradient(120deg, var(--bg-1), var(--bg-2), var(--bg-3));
+    background-size: 220% 220%;
+    animation: gradientShift 20s ease infinite;
+  }
+  @keyframes gradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes blobFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(4%, -6%) scale(1.08); }
+  }
+  .bg-decor { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .bg-decor span { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .32; }
+  .bg-decor span:nth-child(1) {
+    width: 420px; height: 420px; background: var(--accent);
+    top: -140px; left: -120px; animation: blobFloat 16s ease-in-out infinite;
+  }
+  .bg-decor span:nth-child(2) {
+    width: 340px; height: 340px; background: var(--accent-2);
+    bottom: -120px; right: -100px; animation: blobFloat 20s ease-in-out infinite reverse;
+  }
+  .bg-decor span:nth-child(3) {
+    width: 260px; height: 260px; background: var(--accent-3);
+    top: 45%; right: 8%; animation: blobFloat 22s ease-in-out infinite;
+  }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 700; text-wrap: balance; margin: 0; }
+  code { font-family: var(--font-mono); }
+  button { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    body { animation: none; }
+    .bg-decor span { animation: none; }
+  }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 44px clamp(18px, 4vw, 40px) 100px; }
+
+  /* -- Masthead ------------------------------------------------------- */
+  header.masthead { margin-bottom: 34px; }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent-ink); margin-bottom: 10px;
+  }
+  header.masthead h1 { font-size: clamp(1.9rem, 4vw, 2.5rem); letter-spacing: -.01em; }
+  header.masthead p.dek {
+    margin-top: 12px; color: var(--muted); max-width: 62ch; font-size: 1.02rem;
+  }
+
+  /* -- App switcher (segmented control) -------------------------------- */
+  .switcher {
+    display: inline-flex; gap: 3px; padding: 4px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 12px; margin-top: 26px;
+  }
+  .switcher button {
+    appearance: none; border: none; background: transparent; color: var(--muted);
+    font-family: var(--font-display); font-weight: 700; font-size: .92rem;
+    padding: 10px 20px; border-radius: 9px; cursor: pointer;
+    transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  .switcher button:hover { color: var(--text); }
+  .switcher button[aria-pressed="true"] {
+    background: var(--surface); color: var(--text); box-shadow: var(--shadow);
+  }
+  .switcher button .app-dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    margin-right: 8px; background: currentColor; opacity: .5;
+  }
+  .switcher button[aria-pressed="true"] .app-dot { background: var(--accent); opacity: 1; }
+
+  /* -- Role row --------------------------------------------------------- */
+  .role-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;
+  }
+  .role-chip {
+    appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--font-mono); font-size: .82rem; font-weight: 500;
+    padding: 8px 14px 8px 12px; border-radius: 999px;
+    background: var(--surface); color: var(--muted); border: 1px solid var(--border);
+    transition: border-color .15s ease, color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .role-chip:hover { color: var(--text); border-color: var(--accent); }
+  .role-chip .badge-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex: none;
+  }
+  .role-chip[aria-pressed="true"] {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .role-chip[aria-pressed="true"] .badge-dot { background: #fff; }
+
+  .mechanic-note {
+    margin-top: 18px; font-size: .88rem; color: var(--muted);
+    display: flex; gap: 8px; align-items: flex-start; max-width: 60ch;
+  }
+  .mechanic-note strong { color: var(--text); }
+
+  /* -- Workflow stepper -------------------------------------------------- */
+  section.workflow { margin-top: 44px; }
+  section.workflow h2, section.roles h2 {
+    font-size: 1.05rem; font-family: var(--font-mono); font-weight: 600;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--muted);
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .stepper {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px;
+  }
+  @media (max-width: 700px) { .stepper { grid-template-columns: 1fr 1fr; } }
+  .step {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 16px 15px; position: relative;
+    transition: opacity .2s ease, border-color .2s ease, transform .2s ease;
+  }
+  .step .num {
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .step .label { font-family: var(--font-display); font-weight: 700; font-size: .96rem; margin-top: 6px; }
+  .step .owner {
+    margin-top: 10px; font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  }
+  .step.owned {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset, var(--shadow);
+  }
+  .step.owned .owner { color: var(--accent-ink); font-weight: 600; }
+  .step:not(.owned) { opacity: var(--dim); }
+  .stepper::after { content: none; } /* placeholder to keep specificity simple */
+
+  /* -- Role cards ---------------------------------------------------------- */
+  section.roles { margin-top: 44px; }
+  .role-grid { display: grid; gap: 16px; margin-top: 18px; }
+  .role-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 26px 28px; position: relative; overflow: hidden;
+    transition: opacity .2s ease, filter .2s ease;
+  }
+  .role-card::before {
+    content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--accent);
+  }
+  .role-card .kicker {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .role-card .who {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent-ink);
+  }
+  .role-card h3 { font-size: 1.25rem; margin-top: 6px; }
+  .role-card .lock-tag {
+    display: none; align-items: center; gap: 6px; font-family: var(--font-mono);
+    font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--lock);
+    border: 1px solid var(--lock); border-radius: 999px; padding: 3px 9px 3px 7px;
+    flex: none; background: color-mix(in srgb, var(--lock) 10%, transparent);
+  }
+  .role-card .lock-tag svg { width: 10px; height: 10px; }
+
+  .role-card h4 {
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600;
+    margin: 20px 0 8px;
+  }
+  ul.dash { list-style: none; margin: 0; padding: 0; }
+  ul.dash li {
+    position: relative; padding-left: 16px; margin-bottom: 7px; font-size: .93rem;
+  }
+  ul.dash li::before {
+    content: ''; position: absolute; left: 0; top: 8px; width: 5px; height: 5px;
+    background: var(--accent); border-radius: 1px;
+  }
+  .wf-note { font-size: .93rem; color: var(--muted); margin: 0; max-width: 62ch; }
+  .wf-note .own-steps { color: var(--text); font-weight: 600; }
+
+  /* -- Locked state ------------------------------------------------------- */
+  .role-card.locked { cursor: pointer; }
+  .role-card.locked::before { background: var(--border); }
+  .role-card.locked .who { color: var(--muted); }
+  .role-card.locked .lock-tag { display: inline-flex; }
+  .role-card.locked .card-body {
+    opacity: var(--dim); filter: grayscale(.3);
+    transition: opacity .2s ease, filter .2s ease;
+  }
+  .role-card.locked:hover .card-body { opacity: calc(var(--dim) + .18); }
+  .role-card.locked:hover { border-color: var(--muted); }
+
+  footer.page {
+    margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: .85rem; font-family: var(--font-mono);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-decor" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="eyebrow">User guide · access console</div>
+    <h1>Who sees what</h1>
+    <p class="dek">Pick an app, then a role. The guide only shows you what that role actually sees in the real system — every other role's view stays visible, but locked and dimmed, exactly like the access control it's describing.</p>
+
+    <div class="switcher" id="app-switcher" role="tablist" aria-label="Application">
+      <button type="button" role="tab" data-app="gridcare"><span class="app-dot"></span>GridCare-Lite</button>
+      <button type="button" role="tab" data-app="clinicare"><span class="app-dot"></span>ClinicCare-Lite</button>
+    </div>
+
+    <div class="role-row" id="role-row" role="tablist" aria-label="Role"></div>
+
+    <p class="mechanic-note" id="mechanic-note"></p>
+  </header>
+
+  <section class="workflow">
+    <h2 id="workflow-heading">Core workflow</h2>
+    <div class="stepper" id="stepper"></div>
+  </section>
+
+  <section class="roles">
+    <h2>Role views</h2>
+    <div class="role-grid" id="role-grid"></div>
+  </section>
+
+  <footer class="page" id="footer-tag"></footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var LOCK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+
+  /* =====================================================================
+     PRECOMPUTED CONTENT — keyed by [app][role]. Nothing here is fetched
+     or built at click-time; switching only changes which precomputed
+     node tree is shown.
+     ===================================================================== */
+  var GUIDE = {
+    gridcare: {
+      label: "GridCare-Lite",
+      tag: "GridCare-Lite · internal outage & maintenance tool · PySide6 + SQLite",
+      roleOrder: ["engineer", "admin", "technician", "service"],
+      workflow: [
+        { id: "logged",    label: "Outage logged" },
+        { id: "workorder", label: "Work order created" },
+        { id: "assigned",  label: "Technician assigned & working" },
+        { id: "resolved",  label: "Resolved" }
+      ],
+      roles: {
+        engineer: {
+          label: "Engineer",
+          dashboard: [
+            "Report New Outage — pick the substation, describe the fault, choose a severity",
+            "View Outages — full table, filterable by region and status"
+          ],
+          workflowNote: "Starts the pipeline. Every outage begins as an Engineer's report, opened with status Open.",
+          owns: ["logged"]
+        },
+        admin: {
+          label: "Administrator",
+          dashboard: [
+            "View Outages — the same filterable table",
+            "Assign Work Order — pick an open outage, a technician, and a scheduled date",
+            "Reports — total / open / resolved counts, average resolution time, outages by region"
+          ],
+          workflowNote: "Owns the handoff. Assigning a work order moves the outage to In Progress automatically.",
+          owns: ["workorder"]
+        },
+        technician: {
+          label: "Technician",
+          dashboard: [
+            "My Work Orders — only the ones assigned to you",
+            "Mark In Progress — records that repair has started",
+            "Mark Completed — completes the work order and resolves the linked outage"
+          ],
+          workflowNote: "Closes the loop. Marking a work order Completed resolves the outage and stamps the resolution time.",
+          owns: ["assigned", "resolved"]
+        },
+        service: {
+          label: "Customer-Service Rep",
+          dashboard: [
+            "View Outages — check a caller's report against known outages",
+            "Log Customer Complaint — customer name, optional outage ID, description"
+          ],
+          workflowNote: "Runs alongside the pipeline, not inside it. A complaint can be logged and linked to an outage at any stage, without gating Engineer → Administrator → Technician.",
+          owns: []
+        }
+      }
+    },
+    clinicare: {
+      label: "ClinicCare-Lite",
+      tag: "ClinicCare-Lite · clinic admin & communication · Flask + JSON",
+      roleOrder: ["clinician", "patient"],
+      workflow: [
+        { id: "assigned", label: "Task assigned" },
+        { id: "submits",  label: "Patient submits" },
+        { id: "reviews",  label: "Clinician reviews" },
+        { id: "notified", label: "Outcome notified" }
+      ],
+      roles: {
+        clinician: {
+          label: "Clinician",
+          dashboard: [
+            "Dashboard — patient count, task count, pending-review count, recent announcements",
+            "+ New health task — title, instructions, due date, assign to a patient",
+            "Submissions — filter by task/patient/status, preview a CSV/TXT, review with a categorical outcome + notes",
+            "Messages — one non-urgent thread per patient",
+            "Announcements — clinic-wide, optionally emailed",
+            "Appointments — schedule and update status (feeds the no-show analytic)",
+            "Analytics — clinic-wide aggregates only, never a per-patient comparison"
+          ],
+          workflowNote: "Opens and closes the loop: assigns the task, then reviews what comes back — Pending / Reviewed — Normal / Needs Follow-up / Escalated. Categorical only, never a numeric score.",
+          owns: ["assigned", "reviews"]
+        },
+        patient: {
+          label: "Patient",
+          dashboard: [
+            "My Tasks — assigned tasks, due dates, review status",
+            "Submit — .txt / .csv / .pdf, 5 MB max, with a structural completeness note (never a medical read)",
+            "Messages — non-urgent thread with your clinician",
+            "My Progress — private engagement points, completion counts, attendance — never compared with anyone else",
+            "Theme — toggle dark / colorful at any time"
+          ],
+          workflowNote: "Provides the data and receives the outcome: the review appears directly on your task list, with the clinician's notes, as soon as it's saved.",
+          owns: ["submits", "notified"]
+        }
+      }
+    }
+  };
+
+  /* -- State: last-selected role per app persists across app switches -- */
+  var state = {
+    app: "gridcare",
+    roleByApp: { gridcare: "engineer", clinicare: "clinician" }
+  };
+
+  var els = {
+    switcher: document.getElementById("app-switcher"),
+    roleRow: document.getElementById("role-row"),
+    note: document.getElementById("mechanic-note"),
+    workflowHeading: document.getElementById("workflow-heading"),
+    stepper: document.getElementById("stepper"),
+    roleGrid: document.getElementById("role-grid"),
+    footer: document.getElementById("footer-tag")
+  };
+
+  function currentApp() { return GUIDE[state.app]; }
+  function currentRole() { return state.roleByApp[state.app]; }
+
+  function renderSwitcher() {
+    var buttons = els.switcher.querySelectorAll("button");
+    buttons.forEach(function (btn) {
+      var isActive = btn.dataset.app === state.app;
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+
+  function renderRoleRow() {
+    var app = currentApp();
+    var role = currentRole();
+    els.roleRow.innerHTML = "";
+    app.roleOrder.forEach(function (roleId) {
+      var r = app.roles[roleId];
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "role-chip";
+      btn.setAttribute("aria-pressed", roleId === role ? "true" : "false");
+      btn.dataset.role = roleId;
+      btn.innerHTML = '<span class="badge-dot"></span>' + r.label;
+      btn.addEventListener("click", function () { selectRole(roleId); });
+      els.roleRow.appendChild(btn);
+    });
+    els.note.innerHTML = "<strong>Viewing as: " + app.roles[role].label + ".</strong> Its section below is unlocked — every other role in " + app.label + " stays dimmed until you select it.";
+  }
+
+  function renderWorkflow() {
+    var app = currentApp();
+    var role = currentRole();
+    var owns = app.roles[role].owns;
+    var arc = state.app === "gridcare" ? "outage → resolution" : "task → outcome";
+    els.workflowHeading.textContent = app.label + " · " + arc;
+    els.stepper.innerHTML = "";
+    app.workflow.forEach(function (step, i) {
+      var isOwned = owns.indexOf(step.id) !== -1;
+      var div = document.createElement("div");
+      div.className = "step" + (isOwned ? " owned" : "");
+      div.innerHTML =
+        '<div class="num">STEP ' + String(i + 1).padStart(2, "0") + '</div>' +
+        '<div class="label">' + step.label + '</div>' +
+        '<div class="owner">' + (isOwned ? "your step" : "") + '</div>';
+      els.stepper.appendChild(div);
+    });
+  }
+
+  function renderRoleCards() {
+    var app = currentApp();
+    var role = currentRole();
+    els.roleGrid.innerHTML = "";
+    app.roleOrder.forEach(function (roleId) {
+      var r = app.roles[roleId];
+      var isActive = roleId === role;
+      var card = document.createElement("div");
+      card.className = "role-card" + (isActive ? "" : " locked");
+      if (!isActive) {
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        card.setAttribute("aria-label", "Switch to " + r.label);
+        card.addEventListener("click", function () { selectRole(roleId); });
+        card.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectRole(roleId); }
+        });
+      }
+
+      var dashItems = r.dashboard.map(function (d) { return "<li>" + d + "</li>"; }).join("");
+      var ownedLabels = r.owns.map(function (id) {
+        var step = app.workflow.filter(function (s) { return s.id === id; })[0];
+        return step ? step.label : id;
+      });
+      var ownNote = ownedLabels.length
+        ? '<span class="own-steps">Owns: ' + ownedLabels.join(", ") + '.</span> '
+        : "";
+
+      card.innerHTML =
+        '<div class="kicker">' +
+          '<div><div class="who">' + app.label + " · " + r.label + '</div><h3>' + r.label + '</h3></div>' +
+          '<div class="lock-tag">' + LOCK_ICON + 'Locked</div>' +
+        '</div>' +
+        '<div class="card-body">' +
+          '<h4>Dashboard</h4>' +
+          '<ul class="dash">' + dashItems + '</ul>' +
+          '<h4>Workflow role</h4>' +
+          '<p class="wf-note">' + ownNote + r.workflowNote + '</p>' +
+        '</div>';
+
+      els.roleGrid.appendChild(card);
+    });
+  }
+
+  function renderFooter() {
+    els.footer.textContent = currentApp().tag;
+  }
+
+  function renderAll() {
+    renderSwitcher();
+    renderRoleRow();
+    renderWorkflow();
+    renderRoleCards();
+    renderFooter();
+  }
+
+  function selectApp(appId) {
+    state.app = appId;
+    renderAll();
+  }
+
+  function selectRole(roleId) {
+    state.roleByApp[state.app] = roleId;
+    renderRoleRow();
+    renderWorkflow();
+    renderRoleCards();
+  }
+
+  els.switcher.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-app]");
+    if (btn) selectApp(btn.dataset.app);
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

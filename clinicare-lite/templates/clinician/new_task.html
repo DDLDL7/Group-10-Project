@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}New health task{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Assign a new health task</h1>
+<form method="post" class="card p-4" style="max-width:600px">
+  <div class="mb-3">
+    <label class="form-label">Title</label>
+    <input class="form-control" name="title" value="{{ form.title if form else '' }}" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Instructions</label>
+    <textarea class="form-control" name="description" rows="4" required>{{ form.description if form else '' }}</textarea>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Due date</label>
+    <input class="form-control" type="date" name="due_date" value="{{ form.due_date if form else '' }}" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Assign to patient</label>
+    <select class="form-select" name="assigned_to" required>
+      {% for p in patients %}
+        <option value="{{ p.user_id }}">{{ p.name }} ({{ p.user_id }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Required CSV/TXT fields (optional, comma-separated column names)</label>
+    <input class="form-control" name="required_fields" placeholder="e.g. date, systolic, diastolic">
+    <div class="form-text">Used only for the structural completeness check — never interpreted clinically.</div>
+  </div>
+  <button class="btn btn-primary" type="submit">Create task</button>
+</form>
+{% endblock %}

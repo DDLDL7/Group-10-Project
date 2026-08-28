@@ -1,6 +1,28 @@
+# Group 10 Final Project — consolidated dependencies for all three components.
+# Install once into a single virtual environment:
+#   python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+
+# -- gridcare-lite (desktop app) -----------------------------------------
+PySide6
+bcrypt
+
+# -- clinicare-lite (Flask web app) --------------------------------------
+Flask
+matplotlib
+
+# -- grid-analysis (data pipeline + dashboard) ----------------------------
 pandas
 numpy
-matplotlib
-scikit-learn
+networkx
+seaborn
+plotly
 folium
+geopandas
 geopy
+scipy
+streamlit
+jupyter
+ipykernel
+
+# -- shared / testing ------------------------------------------------------
+pytest

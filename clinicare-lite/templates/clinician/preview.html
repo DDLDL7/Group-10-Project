@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Preview submission{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Preview: {{ submission.original_filename }}</h1>
+<p class="text-muted">{{ task.title }} — patient {{ submission.patient_id }}</p>
+
+{% if rows %}
+<div class="table-responsive">
+  <table class="table table-sm table-bordered">
+    {% for row in rows %}
+      <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </table>
+</div>
+{% elif text %}
+<pre class="card p-3">{{ text }}</pre>
+{% else %}
+<p class="text-muted">No inline preview available for this file type ({{ ext }}). <a href="{{ url_for('download_submission', key=submission.key) }}">Download it instead</a>.</p>
+{% endif %}
+
+<a class="btn btn-outline-secondary" href="{{ url_for('review_submission', key=submission.key) }}">Back to review</a>
+{% endblock %}

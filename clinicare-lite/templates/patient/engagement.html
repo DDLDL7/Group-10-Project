@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}My progress{% endblock %}
+{% block content %}
+<h1 class="h4 mb-1">My progress</h1>
+<p class="text-muted">Private to you. Never compared with other patients.</p>
+
+<div class="card p-4 text-center mb-4" style="max-width:300px">
+  <div class="small text-muted">Engagement points</div>
+  <div class="engagement-points"><span data-countup="{{ summary.engagement_points }}">{{ summary.engagement_points }}</span></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-4"><div class="card p-3"><div class="small text-muted">Tasks completed on time</div><div class="h4"><span data-countup="{{ summary.completed_on_time }}">{{ summary.completed_on_time }}</span></div></div></div>
+  <div class="col-md-4"><div class="card p-3"><div class="small text-muted">Tasks completed late</div><div class="h4"><span data-countup="{{ summary.completed_late }}">{{ summary.completed_late }}</span></div></div></div>
+  <div class="col-md-4"><div class="card p-3"><div class="small text-muted">Tasks pending</div><div class="h4"><span data-countup="{{ summary.pending_tasks }}">{{ summary.pending_tasks }}</span></div></div></div>
+  <div class="col-md-4"><div class="card p-3"><div class="small text-muted">Completion rate</div><div class="h4">{% if summary.completion_rate is not none %}<span data-countup="{{ summary.completion_rate }}">{{ summary.completion_rate }}</span>%{% else %}—{% endif %}</div></div></div>
+  <div class="col-md-4"><div class="card p-3"><div class="small text-muted">Appointments attended</div><div class="h4"><span data-countup="{{ summary.appointments_attended }}">{{ summary.appointments_attended }}</span></div></div></div>
+  <div class="col-md-4"><div class="card p-3"><div class="small text-muted">Appointments missed</div><div class="h4"><span data-countup="{{ summary.appointments_missed }}">{{ summary.appointments_missed }}</span></div></div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Review submission{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Review: {{ task.title }}</h1>
+<p class="text-muted">Patient {{ submission.patient_id }} · submitted {{ submission.timestamp }} · file
+  <a href="{{ url_for('download_submission', key=submission.key) }}">{{ submission.original_filename }}</a></p>
+
+{% if submission.completeness_issues %}
+<div class="alert alert-info">
+  <strong>Automated structural check (not a clinical assessment):</strong>
+  <ul class="mb-0">{% for issue in submission.completeness_issues %}<li>{{ issue }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form method="post" class="card p-4" style="max-width:600px">
+  <div class="mb-3">
+    <label class="form-label">Review outcome</label>
+    <select class="form-select" name="outcome" required>
+      {% for o in outcomes %}
+        <option value="{{ o }}" {% if o == submission.review_status %}selected{% endif %}>{{ o }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-text">Administrative triage only — not an automated diagnosis.</div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Notes</label>
+    <textarea class="form-control" name="notes" rows="4">{{ submission.notes or '' }}</textarea>
+  </div>
+  <button class="btn btn-primary" type="submit">Save review &amp; notify patient</button>
+</form>
+{% endblock %}

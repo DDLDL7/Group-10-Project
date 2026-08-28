@@ -1,1 +1,18 @@
-{}
+{
+  "12340000": {
+    "clinic_id": "12340000",
+    "name": "John Doe's Clinic",
+    "clinician_id": "12340000",
+    "patient_ids": [
+      "12342026"
+    ]
+  },
+  "23450000": {
+    "clinic_id": "23450000",
+    "name": "Daryl's Clinic",
+    "clinician_id": "23450000",
+    "patient_ids": [
+      "23452026"
+    ]
+  }
+}

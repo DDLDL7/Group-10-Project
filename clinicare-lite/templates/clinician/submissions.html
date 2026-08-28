@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Submissions{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Patient submissions</h1>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-auto">
+    <select class="form-select" name="task_id" onchange="this.form.submit()">
+      <option value="">All tasks</option>
+      {% for tid, t in tasks.items() %}
+        <option value="{{ tid }}" {% if tid == task_filter %}selected{% endif %}>{{ t.title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <select class="form-select" name="patient_id" onchange="this.form.submit()">
+      <option value="">All patients</option>
+      {% for pid, p in patients.items() %}
+        {% if p %}<option value="{{ pid }}" {% if pid == patient_filter %}selected{% endif %}>{{ p.name }}</option>{% endif %}
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <select class="form-select" name="status" onchange="this.form.submit()">
+      <option value="">All statuses</option>
+      {% for o in outcomes %}
+        <option value="{{ o }}" {% if o == status_filter %}selected{% endif %}>{{ o }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+
+<table class="table table-hover align-middle">
+  <thead><tr><th>Patient</th><th>Task</th><th>Submitted</th><th>Status</th><th>Notes</th><th></th></tr></thead>
+  <tbody>
+  {% for s in submissions %}
+    <tr>
+      <td>{{ patients.get(s.patient_id).name if patients.get(s.patient_id) else s.patient_id }}</td>
+      <td>{{ tasks.get(s.task_id).title if tasks.get(s.task_id) else s.task_id }}</td>
+      <td>{{ s.timestamp }}</td>
+      <td>
+        <span class="badge {% if s.review_status == 'Pending' %}bg-secondary{% elif s.review_status == 'Escalated' %}bg-danger{% elif s.review_status == 'Needs Follow-up' %}bg-warning text-dark{% else %}bg-success{% endif %}">{{ s.review_status }}</span>
+        {% if s.completeness_issues %}<span class="badge bg-info text-dark" title="{{ s.completeness_issues|join('; ') }}">form issues</span>{% endif %}
+      </td>
+      <td class="small text-muted">{{ s.notes or '' }}</td>
+      <td class="text-nowrap">
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('preview_submission', key=s.key) }}">Preview</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('download_submission', key=s.key) }}">Download</a>
+        <a class="btn btn-sm btn-primary" href="{{ url_for('review_submission', key=s.key) }}">Review</a>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6" class="text-muted text-center">No submissions match these filters.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

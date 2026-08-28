@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Operational analytics</h1>
+<p class="text-muted">Clinic-wide aggregates only — never a per-patient comparison.</p>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Task completion rate</div><div class="h4">{% if stats.task_completion_rate is not none %}<span data-countup="{{ stats.task_completion_rate }}">{{ stats.task_completion_rate }}</span>%{% else %}—{% endif %}</div></div></div>
+  <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Pending reviews</div><div class="h4"><span data-countup="{{ stats.pending_reviews }}">{{ stats.pending_reviews }}</span></div></div></div>
+  <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Overdue submissions</div><div class="h4"><span data-countup="{{ stats.overdue_submissions }}">{{ stats.overdue_submissions }}</span></div></div></div>
+  <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Avg. review turnaround</div><div class="h4">{% if stats.average_review_turnaround_days is not none %}<span data-countup="{{ stats.average_review_turnaround_days }}">{{ stats.average_review_turnaround_days }}</span> days{% else %}—{% endif %}</div></div></div>
+  <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Appointment no-show rate</div><div class="h4">{% if stats.appointment_no_show_rate is not none %}<span data-countup="{{ stats.appointment_no_show_rate }}">{{ stats.appointment_no_show_rate }}</span>%{% else %}—{% endif %}</div></div></div>
+  <div class="col-md-3"><div class="card p-3"><div class="small text-muted">Total tasks created</div><div class="h4"><span data-countup="{{ stats.total_tasks }}">{{ stats.total_tasks }}</span></div></div></div>
+</div>
+
+<h2 class="h5">Monthly task volume</h2>
+{% if volume_chart %}
+  <img src="{{ volume_chart }}" alt="Monthly task volume chart" class="img-fluid card p-2">
+{% else %}
+  <p class="text-muted">Not enough data yet to chart.</p>
+{% endif %}
+{% endblock %}

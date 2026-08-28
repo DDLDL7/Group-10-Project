@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}My tasks{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Welcome, {{ current_user.name }}</h1>
+
+{% if announcements %}
+<div class="card p-3 mb-4">
+  <h2 class="h6">Clinic announcements</h2>
+  {% for a in announcements %}
+    <div class="small mb-1"><strong>{{ a.timestamp[:10] }}</strong> — {{ a.content }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="h5">Assigned health tasks</h2>
+<table class="table align-middle">
+  <thead><tr><th>Task</th><th>Due</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for t in tasks %}
+    {% set sub = submissions.get(t.task_id) %}
+    <tr>
+      <td>
+        <div class="fw-semibold">{{ t.title }}</div>
+        <div class="small text-muted">{{ t.description }}</div>
+      </td>
+      <td>{{ t.due_date }}{% if t.is_overdue() and not sub %}<span class="badge bg-danger ms-1">overdue</span>{% endif %}</td>
+      <td>
+        {% if sub %}
+          <span class="badge {% if sub.review_status == 'Pending' %}bg-secondary{% elif sub.review_status == 'Escalated' %}bg-danger{% elif sub.review_status == 'Needs Follow-up' %}bg-warning text-dark{% else %}bg-success{% endif %}">{{ sub.review_status }}</span>
+          {% if sub.notes %}<div class="small text-muted mt-1">{{ sub.notes }}</div>{% endif %}
+        {% else %}
+          <span class="badge bg-light text-dark border">Not submitted</span>
+        {% endif %}
+      </td>
+      <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('submit_task', task_id=t.task_id) }}">{{ 'View / resubmit' if sub else 'Submit' }}</a></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="text-muted text-center">No tasks assigned yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2 class="h5 mt-4">Upcoming appointments</h2>
+<ul class="list-group">
+  {% for a in appointments %}
+    <li class="list-group-item">{{ a.scheduled_at }} — {{ a.status }}{% if a.notes %} · {{ a.notes }}{% endif %}</li>
+  {% else %}
+    <li class="list-group-item text-muted">No appointments scheduled.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

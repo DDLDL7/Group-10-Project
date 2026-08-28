@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ current_user.theme if current_user else 'colorful' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ClinicCare-Lite{% endblock %}</title>
+  <!-- Inline, so the right background paints on the very first frame --
+       every menu click is a full page navigation, and without this the
+       browser's default white canvas shows for a moment while the
+       stylesheets below are still loading. All three are served locally
+       (no CDN) so the page never depends on outside network access. -->
+  <style>
+    html[data-theme="colorful"] { background: #eef0ff; }
+    html[data-theme="dark"]     { background: #1a1033; }
+    html, body { margin: 0; }
+  </style>
+  <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/fonts/poppins.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Decorative floating background blobs -- purely visual, fills the
+       open space behind every page so it never feels empty. -->
+  <div class="bg-decor" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  {% if current_user %}
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="sidebar-brand" href="{{ url_for('index') }}">
+        <span class="sidebar-brand-mark">+</span> ClinicCare<span class="brand-dash">-</span>Lite
+      </a>
+
+      <nav class="sidebar-nav">
+        {% if current_user.role == 'clinician' %}
+          <a href="{{ url_for('clinician_dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'clinician_dashboard' }}"><span class="nav-icon">🏠</span> Dashboard</a>
+          <a href="{{ url_for('submissions_list') }}" class="nav-link {{ 'active' if request.endpoint in ('submissions_list', 'review_submission', 'preview_submission') }}"><span class="nav-icon">📄</span> Submissions</a>
+          <a href="{{ url_for('clinician_messages') }}" class="nav-link {{ 'active' if request.endpoint in ('clinician_messages', 'clinician_conversation') }}"><span class="nav-icon">💬</span> Messages{% if unread_count %} <span class="badge bg-danger ms-auto">{{ unread_count }}</span>{% endif %}</a>
+          <a href="{{ url_for('announcements') }}" class="nav-link {{ 'active' if request.endpoint == 'announcements' }}"><span class="nav-icon">📢</span> Announcements</a>
+          <a href="{{ url_for('clinician_appointments') }}" class="nav-link {{ 'active' if request.endpoint == 'clinician_appointments' }}"><span class="nav-icon">📅</span> Appointments</a>
+          <a href="{{ url_for('clinician_analytics') }}" class="nav-link {{ 'active' if request.endpoint == 'clinician_analytics' }}"><span class="nav-icon">📊</span> Analytics</a>
+        {% else %}
+          <a href="{{ url_for('patient_dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'patient_dashboard' }}"><span class="nav-icon">✅</span> My Tasks</a>
+          <a href="{{ url_for('patient_messages') }}" class="nav-link {{ 'active' if request.endpoint == 'patient_messages' }}"><span class="nav-icon">💬</span> Messages{% if unread_count %} <span class="badge bg-danger ms-auto">{{ unread_count }}</span>{% endif %}</a>
+          <a href="{{ url_for('patient_engagement') }}" class="nav-link {{ 'active' if request.endpoint == 'patient_engagement' }}"><span class="nav-icon">🌱</span> My Progress</a>
+        {% endif %}
+      </nav>
+
+      <div class="sidebar-filler">
+        <div class="sidebar-filler-icon">{{ '🩺' if current_user.role == 'clinician' else '🌤️' }}</div>
+        <p class="sidebar-filler-text">
+          {% if current_user.role == 'clinician' %}
+            Administrative &amp; communication only — never diagnostic.
+          {% else %}
+            This space is yours. Your progress is never shared or compared.
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="sidebar-footer">
+        {% if current_user.role == 'patient' %}
+        <form method="post" action="{{ url_for('set_theme', theme='dark' if current_user.theme != 'dark' else 'colorful') }}" class="mb-2">
+          <button class="btn btn-sm btn-outline-secondary w-100" type="submit">
+            {{ '☀️ Colorful theme' if current_user.theme == 'dark' else '🌙 Dark theme' }}
+          </button>
+        </form>
+        {% endif %}
+        <div class="sidebar-user">
+          <span class="sidebar-user-name">{{ current_user.name }}</span>
+          <span class="sidebar-user-role">{{ current_user.role }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-danger w-100 mt-2">Log out</a>
+      </div>
+    </aside>
+
+    <div class="main-area">
+  {% else %}
+  <div class="topbar-minimal">
+    <a class="sidebar-brand" href="{{ url_for('index') }}">
+      <span class="sidebar-brand-mark">+</span> ClinicCare<span class="brand-dash">-</span>Lite
+    </a>
+  </div>
+  <main class="container pb-5 auth-main">
+  {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+
+  {% if current_user %}
+    </div>
+  </div>
+  {% else %}
+  </main>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

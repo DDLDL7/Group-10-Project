@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 
 REFERENCE_YEAR = 2026
 
-utilities = pd.read_csv('utilities.csv')
-substations = pd.read_csv('substations.csv')
-lines = pd.read_csv('lines.csv')
+utilities = pd.read_csv('data/utilities.csv')
+substations = pd.read_csv('data/substations.csv')
+lines = pd.read_csv('data/lines.csv')
 
 active_subs = substations[substations['Status'] == 'Active'].copy()
 
@@ -197,7 +197,7 @@ axes[1].set_ylabel('Number of lines')
 axes[1].set_xlabel('Utility')
 axes[1].legend(title='Voltage (kV)')
 plt.tight_layout()
-plt.savefig('utility_footprint.png')
+plt.savefig('outputs/charts/utility_footprint.png')
 plt.close(fig)
 
 fig, ax = plt.subplots(figsize=(7, 5))
@@ -206,7 +206,7 @@ ax.set_title('Capacity Utilization Flags (active substations, proxy)')
 ax.set_ylabel('Number of substations')
 plt.xticks(rotation=20, ha='right')
 plt.tight_layout()
-plt.savefig('capacity_utilization_flags.png')
+plt.savefig('outputs/charts/capacity_utilization_flags.png')
 plt.close(fig)
 
 fig, ax = plt.subplots(figsize=(7, 5))
@@ -214,7 +214,7 @@ substations['age_band'].value_counts().reindex(labels).plot(kind='bar', ax=ax, c
 ax.set_title('Substation Count by Age Band (as of 2026)')
 ax.set_ylabel('Number of substations')
 plt.tight_layout()
-plt.savefig('age_band_distribution.png')
+plt.savefig('outputs/charts/age_band_distribution.png')
 plt.close(fig)
 
 fig, ax = plt.subplots(figsize=(9, 6))
@@ -222,7 +222,7 @@ top_risk.set_index('Name')['risk_score'].sort_values().plot(kind='barh', ax=ax, 
 ax.set_title('Top 10 Substations by Reliability-Risk Proxy')
 ax.set_xlabel('Composite risk score (0-1, higher = more at-risk)')
 plt.tight_layout()
-plt.savefig('reliability_risk_top10.png')
+plt.savefig('outputs/charts/reliability_risk_top10.png')
 plt.close(fig)
 
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -231,10 +231,10 @@ region_summary['substation_count'].plot(kind='barh', ax=ax, color=bar_colors)
 ax.set_title('Active Substations by Region, Ghana (red = growth-opportunity candidate)')
 ax.set_xlabel('Number of active substations')
 plt.tight_layout()
-plt.savefig('growth_opportunities.png')
+plt.savefig('outputs/charts/growth_opportunities.png')
 plt.close(fig)
 
-print("Saved charts: utility_footprint.png, capacity_utilization_flags.png, "
+print("Saved charts to outputs/charts/: utility_footprint.png, capacity_utilization_flags.png, "
       "age_band_distribution.png, reliability_risk_top10.png, growth_opportunities.png")
 
 upgrade_candidates = util_map[

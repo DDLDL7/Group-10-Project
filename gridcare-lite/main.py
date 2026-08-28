@@ -1,15 +1,18 @@
-
 """GridCare-Lite entry point (PySide6 desktop app)."""
-
 import sys
+
 from PySide6.QtWidgets import QApplication
-from data_model import LoginWindow
+
+from models.database import Database
+from screens.main_window import MainWindow
 
 
 def main():
     app = QApplication(sys.argv)
 
-    window = LoginWindow()
+    database = Database()  # creates/migrates schema, seeds default users + substations/lines
+
+    window = MainWindow(database)
     window.show()
 
     sys.exit(app.exec())

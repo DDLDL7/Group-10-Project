@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Appointments{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Appointments</h1>
+
+<form method="post" class="card p-3 mb-4 row g-2">
+  <input type="hidden" name="action" value="schedule">
+  <div class="col-md-4">
+    <select class="form-select" name="patient_id" required>
+      <option value="" disabled selected>Select patient</option>
+      {% for p in patients %}{% if p %}<option value="{{ p.user_id }}">{{ p.name }}</option>{% endif %}{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3"><input class="form-control" type="datetime-local" name="scheduled_at" required></div>
+  <div class="col-md-3"><input class="form-control" name="notes" placeholder="Notes (optional)"></div>
+  <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Schedule</button></div>
+</form>
+
+<table class="table">
+  <thead><tr><th>Patient</th><th>When</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for a in appointments %}
+    <tr>
+      <td>{{ patients_by_id.get(a.patient_id).name if patients_by_id.get(a.patient_id) else a.patient_id }}</td>
+      <td>{{ a.scheduled_at }}</td>
+      <td>{{ a.status }}</td>
+      <td>
+        <form method="post" class="d-flex gap-1">
+          <input type="hidden" name="action" value="update_status">
+          <input type="hidden" name="appointment_id" value="{{ a.appointment_id }}">
+          <select class="form-select form-select-sm" name="status" onchange="this.form.submit()">
+            {% for s in ['Scheduled', 'Attended', 'No-show', 'Cancelled'] %}
+              <option value="{{ s }}" {% if s == a.status %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="text-muted text-center">No appointments scheduled yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

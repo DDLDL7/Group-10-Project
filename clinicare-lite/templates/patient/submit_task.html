@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ task.title }}{% endblock %}
+{% block content %}
+<h1 class="h4 mb-1">{{ task.title }}</h1>
+<p class="text-muted">Due {{ task.due_date }}</p>
+<p>{{ task.description }}</p>
+
+{% if existing %}
+<div class="alert alert-info">
+  Already submitted on {{ existing.timestamp }} ({{ existing.original_filename }}) — status: <strong>{{ existing.review_status }}</strong>.
+  {% if existing.notes %}<br>Clinician notes: {{ existing.notes }}{% endif %}
+  {% if existing.completeness_issues %}<br><span class="text-warning">Form check: {{ existing.completeness_issues|join('; ') }}</span>{% endif %}
+</div>
+<p>You may submit a replacement file below.</p>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="card p-4" style="max-width:500px">
+  <div class="mb-3">
+    <label class="form-label">File (.txt, .csv, or .pdf — max 5&nbsp;MB)</label>
+    <input class="form-control" type="file" name="file" accept=".txt,.csv,.pdf" required>
+  </div>
+  <button class="btn btn-primary" type="submit">Submit</button>
+</form>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Patient conversations</h1>
+<div class="messaging-notice">This channel is <strong>not monitored continuously</strong> and must not be used for emergencies.</div>
+<ul class="list-group">
+  {% for p in patients %}
+    {% if p %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      {{ p.name }} ({{ p.user_id }})
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('clinician_conversation', patient_id=p.user_id) }}">Open conversation</a>
+    </li>
+    {% endif %}
+  {% else %}
+    <li class="list-group-item text-muted">No patients registered yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,4 +1,4 @@
 Flask
 bcrypt
-Flask-SocketIO
-plotly
+matplotlib
+pytest

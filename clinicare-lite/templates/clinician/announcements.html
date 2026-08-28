@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Announcements{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Clinic announcements</h1>
+
+<form method="post" class="card p-3 mb-4">
+  <div class="mb-2">
+    <textarea class="form-control" name="content" rows="3" placeholder="e.g. Closed for a public holiday on..." required></textarea>
+  </div>
+  <div class="form-check mb-2">
+    <input class="form-check-input" type="checkbox" name="notify_email" id="notify_email" checked>
+    <label class="form-check-label" for="notify_email">Also email registered patients</label>
+  </div>
+  <button class="btn btn-primary" type="submit">Post announcement</button>
+</form>
+
+<ul class="list-group">
+  {% for a in announcements %}
+    <li class="list-group-item"><strong>{{ a.timestamp }}</strong><br>{{ a.content }}</li>
+  {% else %}
+    <li class="list-group-item text-muted">No announcements yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

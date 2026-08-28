@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GridCare-Lite Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     TOKENS — light is the bare-:root default; dark responds to
+     prefers-color-scheme unless data-theme="light" is stamped;
+     data-theme="dark" wins explicitly either way.
+     ============================================================ */
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef1f4;
+    --text: #131a22;
+    --muted: #5b6b7a;
+    --accent: #a8620a;
+    --accent-soft: #c97a12;
+    --accent-2: #0f8fa8;
+    --border: #dbe2e8;
+    --good: #227a4f;
+    --critical: #b53226;
+    --shadow: 0 1px 2px rgba(19,26,34,.06), 0 10px 26px rgba(19,26,34,.06);
+    --grid-line: rgba(19,26,34,.05);
+    --font-display: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif;
+    --font-body: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0f14;
+      --surface: #121820;
+      --surface-2: #1a222c;
+      --text: #e8edf2;
+      --muted: #8ea0b3;
+      --accent: #f0a83c;
+      --accent-soft: #f0a83c;
+      --accent-2: #3ec7e0;
+      --border: #232c37;
+      --good: #4caf7d;
+      --critical: #e2574c;
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 32px rgba(0,0,0,.4);
+      --grid-line: rgba(232,237,242,.05);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0f14;
+    --surface: #121820;
+    --surface-2: #1a222c;
+    --text: #e8edf2;
+    --muted: #8ea0b3;
+    --accent: #f0a83c;
+    --accent-soft: #f0a83c;
+    --accent-2: #3ec7e0;
+    --border: #232c37;
+    --good: #4caf7d;
+    --critical: #e2574c;
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 32px rgba(0,0,0,.4);
+    --grid-line: rgba(232,237,242,.05);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; }
+  code, .mono { font-family: var(--font-mono); }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent-2); outline-offset: 2px;
+  }
+
+  /* -- Shell: sticky left rail + content -------------------------- */
+  .shell { display: grid; grid-template-columns: 240px minmax(0,1fr); min-height: 100vh; }
+  .rail {
+    border-right: 1px solid var(--border);
+    padding: 28px 18px;
+    position: sticky; top: 0; align-self: start; height: 100vh;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 22px;
+  }
+  .rail-brand {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-display); font-weight: 700; font-size: 1rem;
+    letter-spacing: .01em;
+  }
+  .rail-mark {
+    width: 20px; height: 20px; flex: none;
+    color: var(--accent);
+  }
+  .rail-tag {
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    letter-spacing: .06em; text-transform: uppercase;
+    border-top: 1px solid var(--border); padding-top: 10px;
+  }
+  .rail nav { display: flex; flex-direction: column; gap: 2px; }
+  .rail nav a {
+    display: flex; align-items: center; gap: 9px;
+    color: var(--muted); text-decoration: none;
+    font-size: 13.5px; font-weight: 500;
+    padding: 7px 9px; border-radius: 5px;
+    border-left: 2px solid transparent;
+    transition: color .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .rail nav a .dot {
+    width: 6px; height: 6px; border-radius: 1px; flex: none;
+    background: var(--border); transition: background .15s ease;
+  }
+  .rail nav a:hover { color: var(--text); background: var(--surface-2); }
+  .rail nav a.is-active {
+    color: var(--text); background: var(--surface-2);
+    border-left-color: var(--accent);
+  }
+  .rail nav a.is-active .dot { background: var(--accent); }
+
+  .content { padding: 40px clamp(20px, 5vw, 64px) 100px; max-width: 900px; }
+
+  /* -- Header ------------------------------------------------------- */
+  header.page { margin-bottom: 40px; position: relative; }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent-2); margin-bottom: 10px;
+  }
+  header.page h1 { font-size: clamp(2rem, 4vw, 2.75rem); letter-spacing: -.01em; }
+  header.page .dek {
+    font-size: 1.05rem; color: var(--muted); max-width: 60ch; margin-top: 12px;
+  }
+  .one-line {
+    position: absolute; right: 0; top: 6px; width: 220px; height: 64px;
+    color: var(--border); opacity: .9; pointer-events: none;
+  }
+  @media (max-width: 860px) { .one-line { display: none; } }
+
+  /* -- Section rhythm ------------------------------------------------ */
+  section { margin-top: 56px; scroll-margin-top: 24px; }
+  section > h2 {
+    font-size: 1.5rem; display: flex; align-items: baseline; gap: 10px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  section > h2 .idx { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); font-weight: 500; }
+  section > .lede { color: var(--muted); max-width: 62ch; margin-top: 14px; }
+  h3 { font-size: 1.05rem; margin-top: 26px; margin-bottom: 10px; }
+
+  /* -- Panels / cards -------------------------------------------------- */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; box-shadow: var(--shadow);
+  }
+  .role-panel { padding: 22px 24px; margin-top: 18px; }
+  .role-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .role-chip {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 3px; padding: 3px 7px;
+  }
+  .role-panel h3 { margin: 0; font-size: 1.15rem; }
+
+  ol.steps { list-style: none; margin: 14px 0 0; padding: 0; counter-reset: step; }
+  ol.steps > li {
+    counter-increment: step; position: relative;
+    padding: 0 0 0 34px; margin-bottom: 14px; font-size: .96rem;
+  }
+  ol.steps > li:last-child { margin-bottom: 0; }
+  ol.steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: -1px;
+    width: 22px; height: 22px; border-radius: 4px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  ul.plain { list-style: none; margin: 14px 0 0; padding: 0; }
+  ul.plain > li {
+    position: relative; padding-left: 18px; margin-bottom: 10px; font-size: .96rem;
+  }
+  ul.plain > li::before {
+    content: ''; position: absolute; left: 0; top: 9px;
+    width: 6px; height: 6px; background: var(--accent-2); border-radius: 1px;
+  }
+  strong { font-weight: 600; }
+  kbd, .btn-ref {
+    font-family: var(--font-mono); font-size: .85em; font-weight: 600;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 6px;
+  }
+
+  /* -- Credentials table ------------------------------------------- */
+  .cred-panel { padding: 4px 0; overflow-x: auto; }
+  table.cred { width: 100%; border-collapse: collapse; font-size: .92rem; min-width: 480px; }
+  table.cred th {
+    text-align: left; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+    font-weight: 500; padding: 12px 20px; border-bottom: 1px solid var(--border);
+  }
+  table.cred td {
+    padding: 12px 20px; border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  table.cred tr:last-child td { border-bottom: none; }
+  table.cred td.mono { font-family: var(--font-mono); }
+  .role-dot { display:inline-block; width:7px; height:7px; border-radius:2px; background:var(--accent-2); margin-right:8px; }
+
+  /* -- Install block -------------------------------------------------- */
+  .code-block {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    box-shadow: var(--shadow); overflow: hidden; margin-top: 16px;
+  }
+  .code-block .bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2); font-family: var(--font-mono); font-size: 11px;
+    color: var(--muted); letter-spacing: .05em; text-transform: uppercase;
+  }
+  .code-block .bar button {
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    padding: 3px 8px; cursor: pointer; transition: color .15s ease, border-color .15s ease;
+  }
+  .code-block .bar button:hover { color: var(--text); border-color: var(--accent-2); }
+  .code-block pre {
+    margin: 0; padding: 16px 18px; font-family: var(--font-mono); font-size: 13.5px;
+    line-height: 1.65; overflow-x: auto; color: var(--text);
+  }
+  .code-block pre .c { color: var(--muted); }
+
+  /* -- Diagnostic / error log section --------------------------------- */
+  .log-panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    box-shadow: var(--shadow); margin-top: 18px; overflow: hidden;
+  }
+  .log-row {
+    display: grid; grid-template-columns: 90px 1fr; gap: 16px;
+    padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: .93rem;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-tag {
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--critical); align-self: start;
+    padding-top: 2px;
+  }
+
+  /* -- Footer ------------------------------------------------------- */
+  footer.page {
+    margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: .85rem; font-family: var(--font-mono);
+  }
+
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    .rail { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .rail nav { flex-direction: row; flex-wrap: wrap; }
+    .rail-tag { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-brand">
+      <svg class="rail-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-linejoin="round"/>
+      </svg>
+      GridCare&#8209;Lite
+    </div>
+    <nav id="rail-nav">
+      <a href="#install"><span class="dot"></span>Installation</a>
+      <a href="#login"><span class="dot"></span>Logging in</a>
+      <a href="#engineer"><span class="dot"></span>Engineer</a>
+      <a href="#admin"><span class="dot"></span>Administrator</a>
+      <a href="#technician"><span class="dot"></span>Technician</a>
+      <a href="#service"><span class="dot"></span>Customer service</a>
+      <a href="#errors"><span class="dot"></span>Error handling</a>
+      <a href="#logout"><span class="dot"></span>Logging out</a>
+    </nav>
+    <div class="rail-tag">Desktop app · SQLite</div>
+  </aside>
+
+  <main class="content">
+    <header class="page">
+      <svg class="one-line" viewBox="0 0 220 64" fill="none">
+        <line x1="6" y1="30" x2="214" y2="30" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="24" cy="30" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <circle cx="76" cy="30" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <circle cx="140" cy="30" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <circle cx="196" cy="30" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <line x1="76" y1="34" x2="76" y2="54" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="140" y1="34" x2="140" y2="54" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      <div class="eyebrow">User guide</div>
+      <h1>Running GridCare&#8209;Lite</h1>
+      <p class="dek">A desktop tool for logging outages, assigning work orders, and tracking repairs through to resolution — one screen per role, so nobody sees more than their job requires.</p>
+    </header>
+
+    <section id="install">
+      <h2><span class="idx">01</span> Installation</h2>
+      <p class="lede">Run this from inside the <code>gridcare-lite/</code> folder.</p>
+      <div class="code-block">
+        <div class="bar"><span>terminal</span><button type="button" data-copy>Copy</button></div>
+        <pre id="install-cmd">pip install -r requirements.txt
+python main.py</pre>
+      </div>
+      <p style="margin-top:16px; color:var(--muted); font-size:.94rem;">
+        The first launch creates <code>db/gridcare.db</code>, seeds four demo accounts, and imports substation and line reference data from <code>../grid-analysis/data/</code>.
+      </p>
+
+      <div class="panel cred-panel" style="margin-top:20px;">
+        <table class="cred">
+          <thead><tr><th>Role</th><th>Username</th><th>Password</th></tr></thead>
+          <tbody>
+            <tr><td><span class="role-dot"></span>Administrator</td><td class="mono">admin</td><td class="mono">Admin123!</td></tr>
+            <tr><td><span class="role-dot"></span>Engineer</td><td class="mono">engineer</td><td class="mono">Engineer123!</td></tr>
+            <tr><td><span class="role-dot"></span>Technician</td><td class="mono">technician</td><td class="mono">Technician123!</td></tr>
+            <tr><td><span class="role-dot"></span>Customer service</td><td class="mono">customer_service</td><td class="mono">Service123!</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="login">
+      <h2><span class="idx">02</span> Logging in</h2>
+      <p class="lede">Enter your username and password and select <span class="btn-ref">Log In</span>. An incorrect username or password shows one plain error without hinting which part was wrong. Once you're in, the dashboard shows only the actions your role is permitted to perform — nothing is hidden behind a setting you have to know to look for.</p>
+    </section>
+
+    <section id="engineer">
+      <h2><span class="idx">03</span> By role</h2>
+      <p class="lede">Each role sees a different dashboard. Here's what each one can do.</p>
+
+      <div class="panel role-panel">
+        <div class="role-head"><span class="role-chip">Engineer</span></div>
+        <h3>Reports faults as they happen</h3>
+        <ol class="steps">
+          <li><strong>Report New Outage</strong> — pick the affected substation, describe the fault, choose a severity (Low / Medium / High / Critical), then submit. The outage opens with status <code>Open</code>.</li>
+          <li><strong>View Outages</strong> — a table of every outage, filterable by region and status, refreshed on demand.</li>
+        </ol>
+      </div>
+
+      <div class="panel role-panel" id="admin">
+        <div class="role-head"><span class="role-chip">Administrator</span></div>
+        <h3>Assigns the work and watches the numbers</h3>
+        <ol class="steps">
+          <li><strong>View Outages</strong> — the same outage table.</li>
+          <li><strong>Assign Work Order</strong> — pick an open outage, pick a technician, set a scheduled date (<code>YYYY-MM-DD</code>), and confirm. The outage moves to <code>In&nbsp;Progress</code> automatically.</li>
+          <li><strong>Reports</strong> — total, open, and resolved outage counts, average resolution time in hours, and a breakdown by region.</li>
+        </ol>
+      </div>
+
+      <div class="panel role-panel" id="technician">
+        <div class="role-head"><span class="role-chip">Technician</span></div>
+        <h3>Works the queue that's actually assigned to them</h3>
+        <p style="margin:0; font-size:.96rem;"><strong>My Work Orders</strong> lists only the work orders assigned to you. Select a row, then:</p>
+        <ul class="plain">
+          <li><strong>Mark In Progress</strong> — records that repair work has started.</li>
+          <li><strong>Mark Completed</strong> — completes the work order and resolves the linked outage, stamping the resolution time.</li>
+        </ul>
+        <p style="margin-top:12px; color:var(--muted); font-size:.92rem;">You cannot update a work order assigned to someone else, even by selecting its row — the check happens independently of what's shown on screen.</p>
+      </div>
+
+      <div class="panel role-panel" id="service">
+        <div class="role-head"><span class="role-chip">Customer service</span></div>
+        <h3>Connects a complaint to a known outage</h3>
+        <ol class="steps">
+          <li><strong>View Outages</strong> — check whether a caller's report matches something already logged.</li>
+          <li><strong>Log Customer Complaint</strong> — enter the customer's name, optionally the outage ID if known, and the complaint text, then save.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="errors">
+      <h2><span class="idx">04</span> If something goes wrong</h2>
+      <p class="lede">Nothing here should ever crash the app — every one of these fails with a plain message instead.</p>
+      <div class="log-panel">
+        <div class="log-row"><span class="log-tag">Blocked</span><span>Submitting with a required field empty shows an error and saves nothing.</span></div>
+        <div class="log-row"><span class="log-tag">Blocked</span><span>A scheduled date that isn't <code>YYYY-MM-DD</code> is rejected before it reaches the database.</span></div>
+        <div class="log-row"><span class="log-tag">Blocked</span><span>A non-existent substation or outage ID is rejected with a message, not a crash.</span></div>
+        <div class="log-row"><span class="log-tag">Enforced</span><span>An action your role doesn't permit is blocked in the underlying logic — not just by hiding the button.</span></div>
+      </div>
+    </section>
+
+    <section id="logout">
+      <h2><span class="idx">05</span> Logging out</h2>
+      <p class="lede">Select <span class="btn-ref">Log Out</span> on your dashboard at any time to return to the login screen. Any open outage-dashboard, reports, or technician-orders windows close automatically.</p>
+    </section>
+
+    <footer class="page">GridCare&#8209;Lite · internal outage &amp; maintenance tool · PySide6 + SQLite</footer>
+  </main>
+</div>
+
+<script>
+  (function () {
+    var btn = document.querySelector('[data-copy]');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        var text = document.getElementById('install-cmd').innerText;
+        navigator.clipboard && navigator.clipboard.writeText(text).then(function () {
+          var original = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(function () { btn.textContent = original; }, 1400);
+        });
+      });
+    }
+
+    var links = Array.prototype.slice.call(document.querySelectorAll('#rail-nav a'));
+    var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    if ('IntersectionObserver' in window && sections.length) {
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          var link = document.querySelector('#rail-nav a[href="#' + entry.target.id + '"]');
+          if (!link) return;
+          if (entry.isIntersecting) {
+            links.forEach(function (l) { l.classList.remove('is-active'); });
+            link.classList.add('is-active');
+          }
+        });
+      }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+      sections.forEach(function (s) { observer.observe(s); });
+    }
+  })();
+</script>
+</body>
+</html>

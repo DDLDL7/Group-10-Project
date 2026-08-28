@@ -1,0 +1,128 @@
+--- 2026-08-28T18:07:53 ---
+To: t@example.com
+Subject: New health task assigned
+You have a new task: Blood pressure log
+Due: 2030-01-01
+
+Submit this week's readings.
+
+--- 2026-08-28T18:07:53 ---
+To: t@example.com
+Subject: New task submission
+Ama submitted 'Blood pressure log'.
+
+--- 2026-08-28T18:07:54 ---
+To: t@example.com
+Subject: Your submission has been reviewed
+Task: Blood pressure log
+Outcome: Reviewed — Normal
+Notes: Looks fine administratively.
+
+--- 2026-08-28T18:07:54 ---
+To: t@example.com
+Subject: New health task assigned
+You have a new task: Task for Ama
+Due: 2030-01-01
+
+desc
+
+--- 2026-08-28T18:15:48 ---
+To: t@example.com
+Subject: New health task assigned
+You have a new task: Blood pressure log
+Due: 2030-01-01
+
+Submit this week's readings.
+
+--- 2026-08-28T18:15:48 ---
+To: t@example.com
+Subject: New task submission
+Ama submitted 'Blood pressure log'.
+
+--- 2026-08-28T18:15:48 ---
+To: t@example.com
+Subject: Your submission has been reviewed
+Task: Blood pressure log
+Outcome: Reviewed — Normal
+Notes: Looks fine administratively.
+
+--- 2026-08-28T18:15:49 ---
+To: t@example.com
+Subject: New health task assigned
+You have a new task: Task for Ama
+Due: 2030-01-01
+
+desc
+
+--- 2026-08-28T19:24:38 ---
+To: t@example.com
+Subject: New health task assigned
+You have a new task: Blood pressure log
+Due: 2030-01-01
+
+Submit this week's readings.
+
+--- 2026-08-28T19:24:38 ---
+To: t@example.com
+Subject: New task submission
+Ama submitted 'Blood pressure log'.
+
+--- 2026-08-28T19:24:39 ---
+To: t@example.com
+Subject: Your submission has been reviewed
+Task: Blood pressure log
+Outcome: Reviewed — Normal
+Notes: Looks fine administratively.
+
+--- 2026-08-28T19:24:39 ---
+To: t@example.com
+Subject: New health task assigned
+You have a new task: Task for Ama
+Due: 2030-01-01
+
+desc
+
+--- 2026-08-28T19:56:13 ---
+To: t@example.com
+Subject: New health task assigned
+You have a new task: Blood pressure log
+Due: 2030-01-01
+
+Submit this week's readings.
+
+--- 2026-08-28T19:56:13 ---
+To: t@example.com
+Subject: New task submission
+Ama submitted 'Blood pressure log'.
+
+--- 2026-08-28T19:56:13 ---
+To: t@example.com
+Subject: Your submission has been reviewed
+Task: Blood pressure log
+Outcome: Reviewed — Normal
+Notes: Looks fine administratively.
+
+--- 2026-08-28T19:56:14 ---
+To: t@example.com
+Subject: New health task assigned
+You have a new task: Task for Ama
+Due: 2030-01-01
+
+desc
+
+--- 2026-08-28T21:40:53 ---
+To: kojo@gmail.com
+Subject: New health task assigned
+You have a new task: take meds
+Due: 2026-08-28
+
+1 pill 3 times daily
+
+--- 2026-08-28T21:42:06 ---
+To: kojo@gmail.com
+Subject: New health task assigned
+You have a new task: Take meds
+Due: 2026-08-28
+
+1 tablet 3 times daily
+
